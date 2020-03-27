@@ -6,11 +6,12 @@
 # Justificaciones
 ## Arquitecturas utilizadas
 - Patrón de capas, utilizado para estructurar la aplicación y descomponerlo en tareas de menor complejidad.
-<center>![1](https://miro.medium.com/max/188/1*jMWk_JqqyyloVPhTs_Zd1A.png)</center>
--
+
+![1](https://miro.medium.com/max/188/1*jMWk_JqqyyloVPhTs_Zd1A.png)
+
 - Patrón de igual a igual, establece los componente individuales como pares, estos pueden funcionar tanto como cliente y como servidor.
-<center>![2](https://miro.medium.com/max/260/1*ROvkckSTw1UncrbQSmUJUQ.png)</center>
--
+
+![2](https://miro.medium.com/max/260/1*ROvkckSTw1UncrbQSmUJUQ.png)
 
 ## Elección del esquema de memoria dinámica utilizada
 El proyecto utiliza un esquema de memoria dinámica basado en los métodos propuestos por FreeRTOS, ya que en todo momento en la aplicación los bloques de memoria solicitados serán del mismo tamaño y no serán solicitados con gran frecuencia. También mediante ```#define USE_QM``` puede hacerse uso de la librería de asignación dinámica de memoria RAM de QuantumLeaps.
