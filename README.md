@@ -23,3 +23,6 @@ El método elegido es Heap_4 tomando en cuenta sus características y beneficios
 - Utiliza un algoritmo de primera opción que garantiza que pvPortMalloc() utilice el primer bloque de memoria que satisfaga las necesidades de tamaño requerido.
 - Combina bloques de memoria adyacente para formar un único bloque mas grande, minimizando el riesgo de fragmentación de la memoria.
 - Es adecuado para aplicaciones que asignan y liberan repetidamente bloques de memoria de RAM.
+
+# Funcionamiento
+[Video de demostración](https://drive.google.com/file/d/1jihtah6qJS6JUXZloacJKt82TM2x74C9/view?usp=sharing)
