@@ -2,7 +2,7 @@
 - Pablo Castillo
 - Lorena Zacharewicz
 - Mauricio Barroso
-------------------------------------------
+
 # Justificaciones
 ## Arquitecturas utilizadas
 - Patrón de capas, utilizado para estructurar la aplicación y descomponerlo en tareas de menor complejidad.
@@ -14,15 +14,50 @@
 ![2](https://miro.medium.com/max/260/1*ROvkckSTw1UncrbQSmUJUQ.png)
 
 ## Elección del esquema de memoria dinámica utilizada
-El proyecto utiliza un esquema de memoria dinámica basado en los métodos propuestos por FreeRTOS, ya que en todo momento en la aplicación los bloques de memoria solicitados serán del mismo tamaño y no serán solicitados con gran frecuencia. También mediante ```#define USE_QM``` puede hacerse uso de la librería de asignación dinámica de memoria RAM de QuantumLeaps.
-
-
-Además, los mecanismos de alocación y liberación de memoria proveídos por FreeRTOS(pvPortMalloc() y vPortFree()) resultan suficientes para la aplicación desarrollada.
-
-El método elegido es Heap_4 tomando en cuenta sus características y beneficios, estos son:
+El proyecto utiliza la función ``pvPortMalloc()`` de FreeRTOS combinada con los algoritmos de memory pool de QuantumLeaps para garantinzar una correcta administración de la memoria dinámica reservada para los mensajes entrantes y salientes de la UART.
+ 
+La implmentación de alocación de memoria proveída por FreeRTOS es heap_4, esto debido a sus características:
 - Utiliza un algoritmo de primera opción que garantiza que pvPortMalloc() utilice el primer bloque de memoria que satisfaga las necesidades de tamaño requerido.
 - Combina bloques de memoria adyacente para formar un único bloque mas grande, minimizando el riesgo de fragmentación de la memoria.
 - Es adecuado para aplicaciones que asignan y liberan repetidamente bloques de memoria de RAM.
 
-# Funcionamiento
-[Video de demostración](https://drive.google.com/file/d/1jihtah6qJS6JUXZloacJKt82TM2x74C9/view?usp=sharing)
+Además, la utilización de memory pool en el proyecto se debe a los siguientes beneficios que presenta sobre métodos como malloc:
+
+-  Las agrupaciones de memoria permiten la asignación de memoria con tiempo de ejecución constante. La liberación de memoria para miles de objetos en un grupo es solo una operación, no una por una si se usa malloc para asignar memoria a cada objeto.
+- Las agrupaciones de memoria se pueden agrupar en estructuras de árbol jerárquicas, lo que es adecuado para estructuras de programación especiales como bucles y recursiones.
+- Las agrupaciones de memoria de bloque de tamaño fijo no necesitan almacenar metadatos de asignación para cada asignación, describiendo características como el tamaño del bloque asignado. Particularmente para asignaciones pequeñas, esto proporciona ahorros sustanciales de espacio.
+- Permite un comportamiento determinista en sistemas en tiempo real evitando errores de falta de memoria.
+
+# Requerimientos
+
+Del TP:
+- [x] R_TP-1
+- [x] R_TP-2
+- [x] R_TP-3
+- [x] R_TP-4
+
+Generales:
+- [x] R_TP-1
+
+Capa de separación de frames(C2):
+- [x] R_C2-1
+- [x] R_C2-2
+- [x] R_C2-3
+- [x] R_C2-4
+- [x] R_C2-5
+- [x] R_C2-6
+- [x] R_C2-7
+- [x] R_C2-8
+- [x] R_C2-9
+- [x] R_C2-10
+- [x] R_C2-11
+- [x] R_C2-12
+
+Capa de aplicación(C3):
+- [x] R_C3-1
+- [x] R_C3-2
+- [x] R_C3-3
+
+Opcioanles:
+- [ ] R_OP-1
+
