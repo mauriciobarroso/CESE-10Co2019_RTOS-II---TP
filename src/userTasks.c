@@ -46,8 +46,7 @@
 void vTickTask( void* pvParameters )
 {
 	for( ;; ) {
-		gpioToggle( LEDG );
-		gpioToggle( LEDB );
+		gpioToggle( LED3 );
 
 		vTaskDelay( pdMS_TO_TICKS( 250 ) );
 	}

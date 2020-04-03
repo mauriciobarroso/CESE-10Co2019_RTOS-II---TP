@@ -56,11 +56,11 @@ extern "C" {
 
 /*==================[macros]=================================================*/
 
-#define PROTOCOL_TIMEOUT	pdMS_TO_TICKS( 50 )
-#define PACKET_SIZE			127 //dejo un byte para tamaño del paquete y que quede redondo en 128. Maximo 254
-#define BLOCK_SIZE			( PACKET_SIZE + 1 )
-#define POOL_TOTAL_BLOCKS	4//catidad de bloques en el pool de memoria
-#define POOL_SIZE			POOL_TOTAL_BLOCKS * BLOCK_SIZE //Tamaño total del pool
+#define PROTOCOL_TIMEOUT	pdMS_TO_TICKS( 50 )				// timeout para transmisión y recepción
+#define PACKET_SIZE			127 							// tamaño máximo de los paquetes
+#define BLOCK_SIZE			( PACKET_SIZE + 1 )				// tamaño de los bloques reservados
+#define POOL_TOTAL_BLOCKS	4								// catidad de bloques en el pool de memoria
+#define POOL_SIZE			POOL_TOTAL_BLOCKS * BLOCK_SIZE	// tamaño total del pool
 
 /*==================[typedef]================================================*/
 
@@ -102,13 +102,13 @@ typedef struct
 
 typedef struct
 {
-	UartConfig_t xUartConfig;
-	TimerTimeout_t xTimerTimeout;
-	PacketLength_t xPacketLength;
-	Queue_t xQueue;
-	BlockPointer_t xBlockPointer;
-	uint8_t ucTxCounter;
-	MemoryPool_t xMemoryPool;
+	UartConfig_t xUartConfig;		// datos de configuraciónd de la UART
+	TimerTimeout_t xTimerTimeout;	// manejador de los timers
+	PacketLength_t xPacketLength;	// datos de las longitudes los paquetes de transmisión y recepción
+	Queue_t xQueue;					// manejador de las colas
+	BlockPointer_t xBlockPointer;	// punteros de los paquetes de transmisión y recepción
+	uint8_t ucTxCounter;			// contador de los datos a transmitir
+	MemoryPool_t xMemoryPool;		// datos de la libreriá QMpool
 } UartInstance_t;
 
 /*==================[external data declaration]==============================*/

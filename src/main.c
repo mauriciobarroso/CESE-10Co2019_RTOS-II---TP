@@ -70,6 +70,8 @@ int main(void)
 	   for( ;; )
 	   {}
    }
+   else
+	   gpioWrite( LEDG, ON );
    /* creación de tareas */
    xTaskCreate( vTickTask, "Tick Task", configMINIMAL_STACK_SIZE * 2, NULL, tskIDLE_PRIORITY + 1, NULL );
    xTaskCreate( vDriverTask, "Tick Task", configMINIMAL_STACK_SIZE * 2, ( void * )&xUartInstance, tskIDLE_PRIORITY + 2, NULL );

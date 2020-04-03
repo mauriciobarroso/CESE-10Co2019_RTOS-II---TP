@@ -84,7 +84,7 @@ void vTxTimeOutHandler( TimerHandle_t xTimer )
 	taskENTER_CRITICAL();
 
 	uartTxWrite( pxUartInstance->xUartConfig.xName, '\r' );
-	//uartTxWrite( pxUartInstance->xUartConfig.xName, '\n' );
+	uartTxWrite( pxUartInstance->xUartConfig.xName, '\n' );
 
 	QMPool_put( &pxUartInstance->xMemoryPool.xTxPool, ( void * )pxUartInstance->xBlockPointer.pucTx ); // verificar parametros
 

@@ -91,9 +91,10 @@ bool_t bUartDriverInit( UartInstance_t *pxUartInstance )
 void vUartDriverProcessPacket( UartInstance_t *pxUartInstance )
 {
 	char *pucTxBuffer;
-
+	/* se recibe el puntero del mensaje proveniente de la capa anterior */
 	xQueueReceive( pxUartInstance->xQueue.xRx, &pucTxBuffer, portMAX_DELAY );
-
+	/* se verifica que el puntero no sea nulo y se ejecuta la operación correspondiente
+	 * si el mensaje es valido o se manda un mensaje de error */
 	if( pucTxBuffer != NULL )
 	{
 		if( bCheckCharacters( pucTxBuffer ) )
@@ -109,15 +110,16 @@ void vUartDriverProcessPacket( UartInstance_t *pxUartInstance )
 
 static void vPacketTx( UartInstance_t *pxUartInstance, char *pucTxBlock )
 {
+	/* se envia el puntero al mensaje a la capa de separación de frames */
 	xQueueSend( pxUartInstance->xQueue.xTx, ( void * )&pucTxBlock, portMAX_DELAY );
-
+	/* se abre sección crítica */
 	taskENTER_CRITICAL();
 
 	if( !pxUartInstance->ucTxCounter )
 		bTxInterruptEnable( pxUartInstance );
 
 	uartSetPendingInterrupt( pxUartInstance->xUartConfig.xName );
-
+	/* se cierra sección crítica */
 	taskEXIT_CRITICAL();
 }
 
