@@ -61,8 +61,6 @@ extern "C" {
 
 /*==================[external data declaration]==============================*/
 
-extern UartInstance_t xUartInstance;
-
 /*==================[external functions declaration]=========================*/
 
 void vRxTimeOutHandler( TimerHandle_t xTimer );

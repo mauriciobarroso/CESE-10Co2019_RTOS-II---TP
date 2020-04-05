@@ -143,7 +143,9 @@ static void vRxIsrHandler( void *pvParameters )
 {
 	UBaseType_t uxSavedInterruptStatus = pdFALSE;
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-	UartInstance_t *pxUartInstance = &xUartInstance;
+	/* la función uartCallbackSet() no envía correctamente los parámetros a la función */
+	//UartInstance_t *pxUartInstance = &xUartInstance;
+	UartInstance_t *pxUartInstance = ( UartInstance_t * )pvParameters;
 
 	uxSavedInterruptStatus = taskENTER_CRITICAL_FROM_ISR(); // se abre sección crítica
 	/* se agrega el caracter recibido en el array dinamico */
@@ -165,7 +167,9 @@ static void vTxIsrHandler( void *pvParameters )
 {
 	UBaseType_t uxSavedInterruptStatus = pdFALSE;
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-	UartInstance_t *pxUartInstance = &xUartInstance;
+	/* la función uartCallbackSet() no envía correctamente los parámetros a la función */
+	//UartInstance_t *pxUartInstance = &xUartInstance;
+	UartInstance_t *pxUartInstance = ( UartInstance_t * )pvParameters;
 
 	uxSavedInterruptStatus = taskENTER_CRITICAL_FROM_ISR(); // se abre sección crítica
 

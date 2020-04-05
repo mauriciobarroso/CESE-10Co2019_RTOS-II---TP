@@ -113,8 +113,6 @@ typedef struct
 
 /*==================[external data declaration]==============================*/
 
-UartInstance_t xUartInstance;
-
 /*==================[external functions declaration]=========================*/
 
 bool_t bUartDriverInit( UartInstance_t *xUartInstance );

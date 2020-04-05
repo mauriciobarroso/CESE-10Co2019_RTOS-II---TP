@@ -49,7 +49,7 @@
 
 /*==================[external data declaration]==============================*/
 
-extern UartInstance_t xUartInstance;
+UartInstance_t xUartInstance;
 
 /*==================[internal functions declaration]=========================*/
 
