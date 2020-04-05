@@ -62,4 +62,4 @@ Opcioanles:
 - [ ] R_OP-1
 
 # NOTAS
-1. La función `uartCallbackSet()` de la SAPI no funciona correctamente y no envía los parámetros de callback a la función de callback. Para probar que el sistema funcione correctamente los parámetros de la estructura `UartInstance_t`son declarados como globales en uartDriver.h y utilizados en las demás librerías con el prefijo `extern`.
+1. ~~La función `uartCallbackSet()` de la SAPI no funciona correctamente y no envía los parámetros de callback a la función de callback. Para probar que el sistema funcione correctamente los parámetros de la estructura `UartInstance_t`son declarados como globales en uartDriver.h y utilizados en las demás librerías con el prefijo `extern`.~~ Problema corregido
