@@ -41,18 +41,45 @@
 
 /*==================[internal data declaration]==============================*/
 
+static uint8_t crc8_small_table[16] = {
+    0x00, 0x07, 0x0e, 0x09, 0x1c, 0x1b, 0x12, 0x15,
+    0x38, 0x3f, 0x36, 0x31, 0x24, 0x23, 0x2a, 0x2d
+};
+
 /*==================[external data declaration]==============================*/
 
-void vExtractMessage( char *pucString )
+/*==================[internal functions declaration]=========================*/
+
+static eMessageError_t eMessageErrorType( MessageData_t *pxMessage );
+
+/*==================[external functions definition]=========================*/
+
+void vExtractMessage( MessageData_t *pxMessage )
 {
-	uint8_t ucStringLength;
-
-	ucStringLength = pucString[ 0 ];
-
-	for( uint8_t i = 1; i <= ucStringLength - 4; i++ )
-		pucString[ i ] = pucString[ i + 1 ];
+	for( uint8_t i = 0; i <= pxMessage->ucLength - 2; i++ )	// 4 hardcodeado
+		pxMessage->pucBlock[ i ] = pxMessage->pucBlock[ i + 1 ];
 	/* se reduce el largo del string en 3 */
-	pucString[ 0 ] -= 4;
+	pxMessage->ucLength -= 2;
+}
+
+
+
+uint8_t crc8_init(void)
+{
+    return 0xff;
+}
+
+uint8_t crc8_calc(uint8_t val, void *buf, int cnt)
+{
+	int i;
+	uint8_t *p = buf;
+
+	for (i = 0; i < cnt; i++) {
+		val ^= p[i];
+		val = (val << 4) ^ crc8_small_table[val >> 4];
+		val = (val << 4) ^ crc8_small_table[val >> 4];
+	}
+	return val;
 }
 
 void vCrcByteToChar( uint8_t ucCrc, uint8_t *pucCrc )
@@ -87,32 +114,77 @@ uint8_t ucCrcCharToByte( uint8_t ucCrc1, uint8_t ucCrc0)
 	return ucCrc;
 }
 
-
-void vAddStartAndEndCharacters( char *pucString )
+bool_t bCheckCrc( MessageData_t *pxMessage )
 {
-	for( uint8_t i = pucString[ 0 ]; i > 0; i-- )
-		pucString[ i + 1 ] = pucString[ i ];
+	uint8_t ucCrc1;
+	uint8_t ucCrc2;
 
-	pucString[ 0 ] += 2;
-	pucString[ 1 ] = '(';
-	pucString[ pucString[ 0 ] ] = ')';
+	ucCrc1 = crc8_calc( 0, pxMessage->pucBlock, pxMessage->ucLength - 2 );
+
+	ucCrc2 = ucCrcCharToByte( pxMessage->pucBlock[ pxMessage->ucLength - 2 ], pxMessage->pucBlock[ pxMessage->ucLength - 1 ] );
+
+	if( ucCrc1 != ucCrc2 )
+		return FALSE;
+
+	return TRUE;
 }
 
-void vAddCrc( char *pucString )
+void vAddStartAndEndCharacters( MessageData_t *pxMessage )
 {
-	uint8_t crc = crc8_calc( 0, pucString, pucString[ 0 ] );
+	for( uint8_t i = pxMessage->ucLength; i != 0; i-- )
+		pxMessage->pucBlock[ i ] = pxMessage->pucBlock[ i - 1 ];
+
+	pxMessage->ucLength += 2;
+
+	pxMessage->pucBlock[ 0 ] = '(';
+	pxMessage->pucBlock[ pxMessage->ucLength - 1 ] = ')';
+}
+
+void vAddCrc( MessageData_t *pxMessage )
+{
+	uint8_t crc = crc8_calc( 0, pxMessage->pucBlock, pxMessage->ucLength );
 	uint8_t bCrc[2];
 	vCrcByteToChar( crc, bCrc );
 
-	pucString[ 0 ] += 2;
-	pucString[ pucString[ 0 ] - 2 ] = bCrc[1];
-	pucString[ pucString[ 0 ] - 1 ] = bCrc[0];
+	pxMessage->ucLength += 2;
+	pxMessage->pucBlock[ pxMessage->ucLength - 2 ] = bCrc[1];
+	pxMessage->pucBlock[ pxMessage->ucLength - 1 ] = bCrc[0];
 }
 
-/*==================[internal functions declaration]=========================*/
+bool_t bCheckPacket( MessageData_t *pxMessage )
+{
+	switch( eMessageErrorType( pxMessage ) )
+	{
+		case ERROR_1:
+			strcpy( pxMessage->pucBlock, " ERROR_1" );
+			pxMessage->ucLength = 7;
+			return FALSE;
 
-/*==================[external functions definition]=========================*/
+		case ERROR_2:
+			strcpy( pxMessage->pucBlock, " ERROR_2" );
+			pxMessage->ucLength = 7;
+			return FALSE;
+
+		default:
+			break;
+	}
+
+	return TRUE;
+}
 
 /*==================[internal functions definition]==========================*/
+
+
+static eMessageError_t eMessageErrorType( MessageData_t *pxMessage )
+{
+    if ( pxMessage->pucBlock[ 0 ] != '(' )
+    	return ERROR_1;
+
+    if ( pxMessage->pucBlock[ pxMessage->ucLength - 1 ] != ')' )
+    	return ERROR_2;
+
+    return NO_ERROR;
+}
+
 
 /*==================[end of file]============================================*/

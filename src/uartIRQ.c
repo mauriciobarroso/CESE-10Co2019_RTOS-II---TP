@@ -54,24 +54,28 @@ void vRxTimeOutHandler( TimerHandle_t xTimer )
 
 	taskENTER_CRITICAL();
 
-	if( pxUartInstance->xPacketLength.ucRx <= PACKET_SIZE )
+	if( pxUartInstance->xRxMessage.ucLength <= PACKET_SIZE )
 	{
-		/* se guarda el valor de la longitud del paquete en el primer elemento del string y se pone a cero la variable */
-		pxUartInstance->xBlockPointer.pucRx[ 0 ] = pxUartInstance->xPacketLength.ucRx;
-		pxUartInstance->xPacketLength.ucRx = 0;
 		/* se verifica que el paquete sea correcto */
-		if( bCheckPacket( pxUartInstance->xBlockPointer.pucRx ) )
+		if( bCheckPacket( &pxUartInstance->xRxMessage ) )
 		{
 			/* se extrae el mensaje del paquete y se manda por la cola de recepcion*/
-			vExtractMessage( pxUartInstance->xBlockPointer.pucRx );
-			xQueueSend( pxUartInstance->xQueue.xRx, &pxUartInstance->xBlockPointer.pucRx, portMAX_DELAY );
-			/* se pide otro bloque de memoria para el proximo mensaje a recibir */
-			pxUartInstance->xBlockPointer.pucRx = ( char * )QMPool_get( &pxUartInstance->xMemoryPool.xTxPool, 0 );
-			/* se verifica si se obtuvo un bloque de memoria válido */
-			if( pxUartInstance->xBlockPointer.pucRx == NULL )
-				uartCallbackClr( pxUartInstance->xUartConfig.xName, UART_RECEIVE );
+			vExtractMessage( &pxUartInstance->xRxMessage );
+			/* se verifica CRC */
+			if( bCheckCrc( &pxUartInstance->xRxMessage ) )
+			{
+				pxUartInstance->xRxMessage.ucLength -= 2;
+				xQueueSend( pxUartInstance->xQueue.xRx, ( void * )&pxUartInstance->xRxMessage, portMAX_DELAY );
+				/* se pide otro bloque de memoria para el proximo mensaje a recibir */
+				pxUartInstance->xRxMessage.pucBlock = ( char * )QMPool_get( &pxUartInstance->xMemoryPool.xTxPool, 0 );
+				/* se verifica si se obtuvo un bloque de memoria válido */
+				if( pxUartInstance->xRxMessage.pucBlock == NULL )
+					uartCallbackClr( pxUartInstance->xUartConfig.xName, UART_RECEIVE );
+			}
 		}
 	}
+
+	pxUartInstance->xRxMessage.ucLength = 0;
 
 	taskEXIT_CRITICAL();
 }
@@ -86,7 +90,7 @@ void vTxTimeOutHandler( TimerHandle_t xTimer )
 	uartTxWrite( pxUartInstance->xUartConfig.xName, '\r' );
 	uartTxWrite( pxUartInstance->xUartConfig.xName, '\n' );
 
-	QMPool_put( &pxUartInstance->xMemoryPool.xTxPool, ( void * )pxUartInstance->xBlockPointer.pucTx ); // verificar parametros
+	QMPool_put( &pxUartInstance->xMemoryPool.xTxPool, ( void * )pxUartInstance->xTxMessage.pucBlock ); // verificar parametros
 
 	pxUartInstance->ucTxCounter = 0;
 
@@ -143,18 +147,16 @@ static void vRxIsrHandler( void *pvParameters )
 {
 	UBaseType_t uxSavedInterruptStatus = pdFALSE;
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-	/* la función uartCallbackSet() no envía correctamente los parámetros a la función */
-	//UartInstance_t *pxUartInstance = &xUartInstance;
 	UartInstance_t *pxUartInstance = ( UartInstance_t * )pvParameters;
 
 	uxSavedInterruptStatus = taskENTER_CRITICAL_FROM_ISR(); // se abre sección crítica
 	/* se agrega el caracter recibido en el array dinamico */
-	if( pxUartInstance->xPacketLength.ucRx < PACKET_SIZE )
-		pxUartInstance->xBlockPointer.pucRx[ pxUartInstance->xPacketLength.ucRx + 1 ] = uartRxRead( pxUartInstance->xUartConfig.xName );
+	if( pxUartInstance->xRxMessage.ucLength < PACKET_SIZE )
+		pxUartInstance->xRxMessage.pucBlock[ pxUartInstance->xRxMessage.ucLength ] = uartRxRead( pxUartInstance->xUartConfig.xName );
 	else
-		pxUartInstance->xPacketLength.ucRx = PACKET_SIZE + 1;
+		pxUartInstance->xRxMessage.ucLength = PACKET_SIZE + 1;
 	/* se sube en 1 el tamaño del paquete recibido */
-	pxUartInstance->xPacketLength.ucRx++;
+	pxUartInstance->xRxMessage.ucLength++;
 	/* se inicia el timer */
 	xTimerStartFromISR( pxUartInstance->xTimerTimeout.xRx, &xHigherPriorityTaskWoken );
 
@@ -167,36 +169,32 @@ static void vTxIsrHandler( void *pvParameters )
 {
 	UBaseType_t uxSavedInterruptStatus = pdFALSE;
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-	/* la función uartCallbackSet() no envía correctamente los parámetros a la función */
-	//UartInstance_t *pxUartInstance = &xUartInstance;
 	UartInstance_t *pxUartInstance = ( UartInstance_t * )pvParameters;
 
 	uxSavedInterruptStatus = taskENTER_CRITICAL_FROM_ISR(); // se abre sección crítica
 
 	if( !pxUartInstance->ucTxCounter )
 	{
-		xQueueReceiveFromISR( pxUartInstance->xQueue.xTx, &pxUartInstance->xBlockPointer.pucTx, &xHigherPriorityTaskWoken );
+		xQueueReceiveFromISR( pxUartInstance->xQueue.xTx, &pxUartInstance->xTxMessage, &xHigherPriorityTaskWoken );
 		/* se verifica que el mensaje no sea de error */
-		if( pxUartInstance->xBlockPointer.pucTx[ 1 ] != 'E' )
+		if( pxUartInstance->xTxMessage.pucBlock[ 0 ] != 'E' )
 		{
-			/* se agregan caracteres de inicio y fin */
-			vAddStartAndEndCharacters( pxUartInstance->xBlockPointer.pucTx );
 			/* se agrega crc*/
-			vAddCrc( pxUartInstance->xBlockPointer.pucTx );
+			vAddCrc( &pxUartInstance->xTxMessage );
+			/* se agregan caracteres de inicio y fin */
+			vAddStartAndEndCharacters( &pxUartInstance->xTxMessage );
 		}
 
-		pxUartInstance->xPacketLength.ucTx = pxUartInstance->xBlockPointer.pucTx[ 0 ] + 1;
-
-		pxUartInstance->ucTxCounter++;
+		pxUartInstance->xTxMessage.ucLength += 1;
 	}
 		/* se transmiten todos los bytes del bloque de transmisión */
-	if( pxUartInstance->ucTxCounter < pxUartInstance->xPacketLength.ucTx )
+	if( pxUartInstance->ucTxCounter < pxUartInstance->xTxMessage.ucLength - 1 )
 	{
-		uartTxWrite( pxUartInstance->xUartConfig.xName, pxUartInstance->xBlockPointer.pucTx[ pxUartInstance->ucTxCounter ] );
+		uartTxWrite( pxUartInstance->xUartConfig.xName, pxUartInstance->xTxMessage.pucBlock[ pxUartInstance->ucTxCounter ] );
 		pxUartInstance->ucTxCounter++;
 	}
 
-	if( pxUartInstance->ucTxCounter == pxUartInstance->xPacketLength.ucTx )
+	if( pxUartInstance->ucTxCounter == pxUartInstance->xTxMessage.ucLength - 1 )
 	{
 		uartCallbackClr( pxUartInstance->xUartConfig.xName, UART_TRANSMITER_FREE );
 		xTimerStartFromISR( pxUartInstance->xTimerTimeout.xTx, &xHigherPriorityTaskWoken );

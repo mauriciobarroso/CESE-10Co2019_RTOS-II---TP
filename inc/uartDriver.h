@@ -45,8 +45,6 @@
 #include "sapi.h"
 
 #include "qmpool.h"
-#include "operations.h"
-
 
 /*==================[cplusplus]==============================================*/
 
@@ -63,6 +61,11 @@ extern "C" {
 #define POOL_SIZE			POOL_TOTAL_BLOCKS * BLOCK_SIZE	// tamaño total del pool
 
 /*==================[typedef]================================================*/
+typedef struct
+{
+	char *pucBlock;
+	uint8_t ucLength;
+} MessageData_t;
 
 typedef struct
 {
@@ -78,21 +81,9 @@ typedef struct
 
 typedef struct
 {
-	uint8_t ucRx;
-	uint8_t ucTx;
-} PacketLength_t;
-
-typedef struct
-{
 	QueueHandle_t xRx;
 	QueueHandle_t xTx;
 } Queue_t;
-
-typedef struct
-{
-	char *pucRx;
-	char *pucTx;
-} BlockPointer_t;
 
 typedef struct
 {
@@ -103,10 +94,10 @@ typedef struct
 typedef struct
 {
 	UartConfig_t xUartConfig;		// datos de configuraciónd de la UART
+	MessageData_t xRxMessage;
+	MessageData_t xTxMessage;
 	TimerTimeout_t xTimerTimeout;	// manejador de los timers
-	PacketLength_t xPacketLength;	// datos de las longitudes los paquetes de transmisión y recepción
 	Queue_t xQueue;					// manejador de las colas
-	BlockPointer_t xBlockPointer;	// punteros de los paquetes de transmisión y recepción
 	uint8_t ucTxCounter;			// contador de los datos a transmitir
 	MemoryPool_t xMemoryPool;		// datos de la libreriá QMpool
 } UartInstance_t;

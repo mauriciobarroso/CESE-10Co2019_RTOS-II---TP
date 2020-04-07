@@ -37,8 +37,7 @@
 /*==================[inclusions]=============================================*/
 
 #include <stdint.h>
-
-#include "crc8.h"
+#include "uartDriver.h"
 
 /*==================[cplusplus]==============================================*/
 
@@ -50,14 +49,26 @@ extern "C" {
 
 /*==================[typedef]================================================*/
 
+typedef enum
+{
+	ERROR_1,
+	ERROR_2,
+	ERROR_3,
+	NO_ERROR,
+} eMessageError_t;
+
 /*==================[external data declaration]==============================*/
 
 /*==================[external functions declaration]=========================*/
-void vExtractMessage( char *pucString );
+void vExtractMessage( MessageData_t *pxMessage );
+uint8_t crc8_init(void);
+uint8_t crc8_calc(uint8_t val, void *buf, int cnt);
 void vCrcByteToChar( uint8_t ucCrc, uint8_t *puc );
 uint8_t ucCrcCharToByte( uint8_t ucCrc1, uint8_t ucCrc0);
-void vAddStartAndEndCharacters( char *pucString );
-void vAddCrc( char *pucString );
+bool_t bCheckCrc( MessageData_t *pxMessage );
+void vAddStartAndEndCharacters( MessageData_t *pxMessage );
+void vAddCrc( MessageData_t *pxMessage );
+bool_t bCheckPacket( MessageData_t *pxMessage );
 
 /*==================[cplusplus]==============================================*/
 

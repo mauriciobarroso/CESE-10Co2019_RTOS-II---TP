@@ -47,56 +47,48 @@
 
 /*==================[internal functions declaration]=========================*/
 
-static void vLowercaseConvert( char *pucString );
-static void vUppercaseConvert( char *pucString );
+static void vLowercaseConvert( MessageData_t *pxMessage );
+static void vUppercaseConvert( MessageData_t *pxMessage );
 
 /*==================[external functions definition]=========================*/
 
-void vOperationError( char *pucString)
+void vOperationError( MessageData_t *pxMessage)
 {
-	strcpy( pucString, " ERROR" );
-	pucString[ 0 ] = 5;
+	strcpy( pxMessage->pucBlock, "ERROR" );
+	pxMessage->ucLength = 5;
 }
 
-void vOperationSelect( char *pucString )
+void vOperationSelect( MessageData_t *pxMessage )
 {
-	switch( pucString[ 1 ] )
+	switch( pxMessage->pucBlock[ 0 ] )
 	{
 		case 'm':
-			vLowercaseConvert( pucString );
+			vLowercaseConvert( pxMessage );
 			break;
 		case 'M':
-			vUppercaseConvert( pucString );
+			vUppercaseConvert( pxMessage );
 			break;
 		default:
-			vOperationError( pucString );
+			vOperationError( pxMessage );
 			break;
 	}
 }
 
-static void vLowercaseConvert( char *pucString )
+static void vLowercaseConvert( MessageData_t *pxMessage )
 {
-	uint8_t ucStringLength;
-
-	ucStringLength = pucString[ 0 ];
-
-	for( uint8_t ucIndex = 1; ucIndex <= ucStringLength; ucIndex++ )
+	for( uint8_t ucIndex = 1; ucIndex < pxMessage->ucLength; ucIndex++ )
 	{
-		if( pucString[ ucIndex ] <= 'Z' )
-			pucString[ ucIndex ] += 32;
+		if( pxMessage->pucBlock[ ucIndex ] <= 'Z' )
+			pxMessage->pucBlock[ ucIndex ] += 32;
 	}
 }
 
-static void vUppercaseConvert( char *pucString )
+static void vUppercaseConvert( MessageData_t *pxMessage )
 {
-	uint8_t ucStringLength;
-
-	ucStringLength = pucString[ 0 ];
-
-	for( uint8_t ucIndex = 1; ucIndex <= ucStringLength; ucIndex++ )
+	for( uint8_t ucIndex = 1; ucIndex <= pxMessage->ucLength; ucIndex++ )
 	{
-		if( pucString[ ucIndex ] >= 'a' )
-			pucString[ ucIndex ] -= 32;
+		if( pxMessage->pucBlock[ ucIndex ] >= 'a' )
+			pxMessage->pucBlock[ ucIndex ] -= 32;
 	}
 }
 

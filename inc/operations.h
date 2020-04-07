@@ -39,6 +39,8 @@
 #include <stdint.h>
 #include "string.h"
 
+#include "uartDriver.h"
+
 /*==================[cplusplus]==============================================*/
 
 #ifdef __cplusplus
@@ -53,8 +55,8 @@ extern "C" {
 
 /*==================[external functions declaration]=========================*/
 
-void vOperationError( char *pucString);
-void vOperationSelect( char *pucString );
+void vOperationError( MessageData_t *pxMessage );
+void vOperationSelect( MessageData_t *pxMessage );
 
 /*==================[cplusplus]==============================================*/
 

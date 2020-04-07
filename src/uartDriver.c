@@ -35,6 +35,7 @@
 
 #include "uartDriver.h"
 #include "uartIRQ.h"
+#include "operations.h"
 
 /*==================[macros]=================================================*/
 
@@ -46,8 +47,8 @@
 
 /*==================[internal functions declaration]=========================*/
 
-static void vPacketTx( UartInstance_t *pxUartInstance, char *pucTxBlock );
-static bool_t bCheckCharacters( char *pucString );
+static void vPacketTx( UartInstance_t *pxUartInstance, MessageData_t *pxMessage );
+static bool_t bCheckCharacters( MessageData_t *pxMessage );
 
 /*==================[external functions definition]=========================*/
 
@@ -56,18 +57,18 @@ bool_t bUartDriverInit( UartInstance_t *pxUartInstance )
 {
 	/* inicialización de variables */
 	pxUartInstance->ucTxCounter = 0;
-	pxUartInstance->xPacketLength.ucRx = 0;
-	pxUartInstance->xPacketLength.ucTx = 0;
+	pxUartInstance->xRxMessage.ucLength = 0;
+	pxUartInstance->xTxMessage.ucLength = 0;
 	/* configuración UART */
 	uartConfig( pxUartInstance->xUartConfig.xName, pxUartInstance->xUartConfig.ulBaudRate );
 	if( !bRxInterruptEnable( pxUartInstance ) )
 		return FALSE;
 	uartInterrupt( pxUartInstance->xUartConfig.xName, TRUE );
 	/* creación de colas */
-	pxUartInstance->xQueue.xRx = xQueueCreate( POOL_TOTAL_BLOCKS, sizeof( char * ) );
+	pxUartInstance->xQueue.xRx = xQueueCreate( POOL_TOTAL_BLOCKS, sizeof( MessageData_t ) );
 	if( pxUartInstance->xQueue.xRx == NULL)
 		return FALSE;
-	pxUartInstance->xQueue.xTx = xQueueCreate( POOL_TOTAL_BLOCKS, sizeof( char * ) );
+	pxUartInstance->xQueue.xTx = xQueueCreate( POOL_TOTAL_BLOCKS, sizeof( MessageData_t ) );
 	if( pxUartInstance->xQueue.xTx == NULL)
 		return FALSE;
 	/* creación de timers */
@@ -82,7 +83,7 @@ bool_t bUartDriverInit( UartInstance_t *pxUartInstance )
 	if( pxUartInstance->xMemoryPool.pucPoolStorage == NULL)
 		return FALSE;
 	QMPool_init( &pxUartInstance->xMemoryPool.xTxPool, ( void * )pxUartInstance->xMemoryPool.pucPoolStorage, POOL_SIZE * sizeof( char ), BLOCK_SIZE );
-	pxUartInstance->xBlockPointer.pucRx = ( char * )QMPool_get( &pxUartInstance->xMemoryPool.xTxPool, 0 );
+	pxUartInstance->xRxMessage.pucBlock = ( char * )QMPool_get( &pxUartInstance->xMemoryPool.xTxPool, 0 );
 
 	return TRUE;
 }
@@ -90,28 +91,28 @@ bool_t bUartDriverInit( UartInstance_t *pxUartInstance )
 
 void vUartDriverProcessPacket( UartInstance_t *pxUartInstance )
 {
-	char *pucTxBuffer;
+	MessageData_t pxMessage;
 	/* se recibe el puntero del mensaje proveniente de la capa anterior */
-	xQueueReceive( pxUartInstance->xQueue.xRx, &pucTxBuffer, portMAX_DELAY );
+	xQueueReceive( pxUartInstance->xQueue.xRx, &pxMessage, portMAX_DELAY );
 	/* se verifica que el puntero no sea nulo y se ejecuta la operación correspondiente
 	 * si el mensaje es valido o se manda un mensaje de error */
-	if( pucTxBuffer != NULL )
+	if( &pxMessage != NULL )
 	{
-		if( bCheckCharacters( pucTxBuffer ) )
-			vOperationSelect( pucTxBuffer );
+		if( bCheckCharacters( &pxMessage ) )
+			vOperationSelect( &pxMessage );
 		else
-			vOperationError( pucTxBuffer );
+			vOperationError( &pxMessage );
 
-		vPacketTx( pxUartInstance, pucTxBuffer );
+		vPacketTx( pxUartInstance, &pxMessage );
 	}
 }
 
 /*==================[internal functions definition]==========================*/
 
-static void vPacketTx( UartInstance_t *pxUartInstance, char *pucTxBlock )
+static void vPacketTx( UartInstance_t *pxUartInstance, MessageData_t *pxMessage )
 {
 	/* se envia el puntero al mensaje a la capa de separación de frames */
-	xQueueSend( pxUartInstance->xQueue.xTx, ( void * )&pucTxBlock, portMAX_DELAY );
+	xQueueSend( pxUartInstance->xQueue.xTx, ( void * )pxMessage, portMAX_DELAY );
 	/* se abre sección crítica */
 	taskENTER_CRITICAL();
 
@@ -123,11 +124,11 @@ static void vPacketTx( UartInstance_t *pxUartInstance, char *pucTxBlock )
 	taskEXIT_CRITICAL();
 }
 
-static bool_t bCheckCharacters( char *pucString )
+static bool_t bCheckCharacters( MessageData_t *pxMessage )
 {
-    for( uint8_t ucIndex = 2; ucIndex <= pucString[ 0 ]; ucIndex++ )
+    for( uint8_t ucIndex = 0; ucIndex < pxMessage->ucLength; ucIndex++ )
     {
-    	if( !( ( pucString[ ucIndex ] >= 'A' && pucString[ ucIndex ] <= 'Z' ) || ( pucString[ ucIndex ] >= 'a' && pucString[ ucIndex ] <= 'z' ) ) )
+    	if( !( ( pxMessage->pucBlock[ ucIndex ] >= 'A' && pxMessage->pucBlock[ ucIndex ] <= 'Z' ) || ( pxMessage->pucBlock[ ucIndex ] >= 'a' && pxMessage->pucBlock[ ucIndex ] <= 'z' ) ) )
     		return FALSE;
     }
 

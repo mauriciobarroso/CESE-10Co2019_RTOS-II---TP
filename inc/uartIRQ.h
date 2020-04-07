@@ -45,8 +45,6 @@
 #include "sapi.h"
 
 #include "uartDriver.h"
-#include "crc8.h"
-#include "check.h"
 #include "utils.h"
 
 /*==================[cplusplus]==============================================*/
