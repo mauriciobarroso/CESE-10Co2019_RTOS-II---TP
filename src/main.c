@@ -41,6 +41,11 @@
 
 #include "userTasks.h"
 
+#include "eventos.h"
+#include "modulos.h"
+#include "mM_module.h"
+#include "operations.h"
+
 /*==================[macros]=================================================*/
 
 /*==================[typedef]================================================*/
@@ -50,6 +55,13 @@
 /*==================[external data declaration]==============================*/
 
 UartInstance_t xUartInstance;
+
+Modulo_t * Modulo_m;
+Modulo_t * Modulo_M;
+Modulo_t * Modulo_Op;
+
+TaskHandle_t vTaskModulo_m_Handle = NULL;
+TaskHandle_t vTaskModulo_M_Handle = NULL;
 
 /*==================[internal functions declaration]=========================*/
 
@@ -72,6 +84,18 @@ int main(void)
    }
    else
 	   gpioWrite( LEDG, ON );
+
+   Modulo_m  = xRegistModule( vEventManager_m  );
+   Modulo_M  = xRegistModule( vEventManager_M  );
+   Modulo_Op = xRegistModule( vEventManager_Op );
+   vInitModules();
+
+   //cola de eventos
+   queueEvents = xQueueCreate( 15, sizeof( Evento_t ) );
+   // Creo la tarea Despachadora de eventos
+   xTaskCreate( vTaskEventDispatch, "TaskEventDispatch", configMINIMAL_STACK_SIZE * 5, NULL, tskIDLE_PRIORITY + 3, NULL );
+
+
    /* creación de tareas */
    xTaskCreate( vTickTask, "Tick Task", configMINIMAL_STACK_SIZE * 2, NULL, tskIDLE_PRIORITY + 1, NULL );
    xTaskCreate( vDriverTask, "Tick Task", configMINIMAL_STACK_SIZE * 2, ( void * )&xUartInstance, tskIDLE_PRIORITY + 2, NULL );

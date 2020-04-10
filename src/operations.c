@@ -34,6 +34,8 @@
 /*==================[inclusions]============================================*/
 
 #include "operations.h"
+#include "eventos.h"
+#include "mM_module.h"
 
 /*==================[macros]=================================================*/
 
@@ -47,9 +49,33 @@
 
 /*==================[internal functions declaration]=========================*/
 
-static void vCharactersConvert( MessageData_t *pxMessage );
+static void vLowercaseConvert( MessageData_t *pxMessage );
+static void vUppercaseConvert( MessageData_t *pxMessage );
 
 /*==================[external functions definition]=========================*/
+
+void vEventManager_Op ( Evento_t *evn )
+{
+    switch( evn->signal )
+    {
+		case SIG_INICIAR:
+			//Ok!!
+			break;
+		case SIG_OK_CONVERSION_m:
+			gpioToggle( LED1 );
+			vTaskDelete( vTaskModulo_m_Handle );
+			break;
+		case SIG_OK_CONVERSION_M:
+			gpioToggle( LED2 );
+			vTaskDelete( vTaskModulo_M_Handle );
+			break;
+		default:
+			//Ups!!
+			break;
+    }
+}
+
+
 
 void vOperationError( MessageData_t *pxMessage)
 {
@@ -62,10 +88,14 @@ void vOperationSelect( MessageData_t *pxMessage )
 	switch( pxMessage->pucBlock[ 0 ] )
 	{
 		case 'm':
-			vCharactersConvert( pxMessage );
+			//vLowercaseConvert( pxMessage );
+			xTaskCreate( vTaskModulo_m, "vTaskModulo_m", configMINIMAL_STACK_SIZE * 2, NULL, tskIDLE_PRIORITY + 4, vTaskModulo_m_Handle );
+	        vPutQueueEvent( Modulo_m, SIG_CONVERTIR_LOWERCASE, pxMessage->pucBlock, pxMessage->ucLength );
 			break;
 		case 'M':
-			vCharactersConvert( pxMessage );
+			//vUppercaseConvert( pxMessage );
+			xTaskCreate( vTaskModulo_M, "vTaskModulo_M", configMINIMAL_STACK_SIZE * 2, NULL, tskIDLE_PRIORITY + 4, vTaskModulo_M_Handle );
+			vPutQueueEvent( Modulo_M, SIG_CONVERTIR_UPPERCASE, pxMessage->pucBlock, pxMessage->ucLength );
 			break;
 		default:
 			vOperationError( pxMessage );
@@ -73,21 +103,21 @@ void vOperationSelect( MessageData_t *pxMessage )
 	}
 }
 
-static void vCharactersConvert( MessageData_t *pxMessage )
+static void vLowercaseConvert( MessageData_t *pxMessage )
 {
 	for( uint8_t ucIndex = 1; ucIndex < pxMessage->ucLength; ucIndex++ )
 	{
-		if( pxMessage->pucBlock[ 0 ] == 'm' )
-		{
-			if( pxMessage->pucBlock[ ucIndex ] <= 'Z' )
-				pxMessage->pucBlock[ ucIndex ] += CONVERSION_FACTOR;
-		}
+		if( pxMessage->pucBlock[ ucIndex ] <= 'Z' )
+			pxMessage->pucBlock[ ucIndex ] += 32;
+	}
+}
 
-		else
-		{
-			if( pxMessage->pucBlock[ ucIndex ] >= 'a' )
-				pxMessage->pucBlock[ ucIndex ] -= CONVERSION_FACTOR;
-		}
+static void vUppercaseConvert( MessageData_t *pxMessage )
+{
+	for( uint8_t ucIndex = 1; ucIndex <= pxMessage->ucLength; ucIndex++ )
+	{
+		if( pxMessage->pucBlock[ ucIndex ] >= 'a' )
+			pxMessage->pucBlock[ ucIndex ] -= 32;
 	}
 }
 
