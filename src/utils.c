@@ -126,6 +126,8 @@ bool_t bCheckCrc( MessageData_t *pxMessage )
 	if( ucCrc1 != ucCrc2 )
 		return FALSE;
 
+	pxMessage->ucLength -= 2;
+
 	return TRUE;
 }
 
