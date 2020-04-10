@@ -96,7 +96,7 @@ static void vLowercaseConvert_mM( char *pMessage, int length )
 	for( uint8_t ucIndex = 1; ucIndex < length; ucIndex++ )
 	{
 		if( pMessage[ ucIndex ] <= 'Z' )
-			pMessage[ ucIndex ] += 32;
+			pMessage[ ucIndex ] += CONVERSION_FACTOR;
 	}
 }
 
@@ -105,7 +105,7 @@ static void vUppercaseConvert_mM( char *pMessage, int length  )
 	for( uint8_t ucIndex = 1; ucIndex <= length; ucIndex++ )
 	{
 		if( pMessage[ ucIndex ] >= 'a' )
-			pMessage[ ucIndex ] -= 32;
+			pMessage[ ucIndex ] -= CONVERSION_FACTOR;
 	}
 }
 

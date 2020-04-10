@@ -9,6 +9,7 @@
 #define _MM_MODULE_H_
 
 #include "modulos.h"
+#include "operations.h"
 
 void vTaskModulo_m ( void * );
 void vTaskModulo_M ( void * );

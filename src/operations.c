@@ -49,9 +49,6 @@
 
 /*==================[internal functions declaration]=========================*/
 
-static void vLowercaseConvert( MessageData_t *pxMessage );
-static void vUppercaseConvert( MessageData_t *pxMessage );
-
 /*==================[external functions definition]=========================*/
 
 void vEventManager_Op ( Evento_t *evn )
@@ -80,7 +77,7 @@ void vEventManager_Op ( Evento_t *evn )
 void vOperationError( MessageData_t *pxMessage)
 {
 	strcpy( pxMessage->pucBlock, "ERROR" );
-	pxMessage->ucLength = 5;
+	pxMessage->ucLength = sizeof( "ERROR" );
 }
 
 void vOperationSelect( MessageData_t *pxMessage )
@@ -100,24 +97,6 @@ void vOperationSelect( MessageData_t *pxMessage )
 		default:
 			vOperationError( pxMessage );
 			break;
-	}
-}
-
-static void vLowercaseConvert( MessageData_t *pxMessage )
-{
-	for( uint8_t ucIndex = 1; ucIndex < pxMessage->ucLength; ucIndex++ )
-	{
-		if( pxMessage->pucBlock[ ucIndex ] <= 'Z' )
-			pxMessage->pucBlock[ ucIndex ] += 32;
-	}
-}
-
-static void vUppercaseConvert( MessageData_t *pxMessage )
-{
-	for( uint8_t ucIndex = 1; ucIndex <= pxMessage->ucLength; ucIndex++ )
-	{
-		if( pxMessage->pucBlock[ ucIndex ] >= 'a' )
-			pxMessage->pucBlock[ ucIndex ] -= 32;
 	}
 }
 
