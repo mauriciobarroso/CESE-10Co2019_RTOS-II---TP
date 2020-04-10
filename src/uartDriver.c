@@ -36,6 +36,7 @@
 #include "uartDriver.h"
 #include "uartIRQ.h"
 #include "operations.h"
+#include "activeObject.h"
 
 /*==================[macros]=================================================*/
 
@@ -91,15 +92,31 @@ bool_t bUartDriverInit( UartInstance_t *pxUartInstance )
 
 void vUartDriverProcessPacket( UartInstance_t *pxUartInstance )
 {
+	UartDriverEvent_t pxUartDriverEvent;
 	MessageData_t pxMessage;
 	/* se recibe el puntero del mensaje proveniente de la capa anterior */
 	xQueueReceive( pxUartInstance->xQueue.xRx, &pxMessage, portMAX_DELAY );
-	/* se verifica que el puntero no sea nulo y se ejecuta la operación correspondiente
-	 * si el mensaje es valido o se manda un mensaje de error */
+	/* se verifica que el puntero no sea nulo y que todos los caracteres sean
+	 * alfabéticos, si cumle con las condiciones se ejecuta la operación
+	 * mayusculizar/minusculizar o se escribe un mensaje de error par que sea
+	 * transmitido */
 	if( &pxMessage != NULL )
 	{
 		if( bCheckCharacters( &pxMessage ) )
-			vOperationSelect( &pxMessage );
+		{
+			//vUppercaseConvert( &pxMessage ); // cambiar
+			/* 1. Preguntar por la operación
+			 * 2, Crear el AO correspondiente a la operación
+			 * 3. Enviar el evento al AO creado
+			 * 4. Esperar la respuesta del AO
+			 * 5. Destruir el AO */
+			pxUartDriverEvent.EventType = UART_PACKET_MM;
+			pxUartDriverEvent.xMessage = pxMessage;
+
+			vSendToActiveObject( &pxUartDriverEvent, xActiveObject );
+
+		}
+
 		else
 			vOperationError( &pxMessage );
 

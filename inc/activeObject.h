@@ -31,13 +31,20 @@
 
 /* Date: 19/03/20 */
 
-#ifndef _UTILS_H_
-#define _UTILS_H_
+#ifndef _ACTIVEOBJECT_H_
+#define _ACTIVEOBJECT_H_
 
 /*==================[inclusions]=============================================*/
 
 #include <stdint.h>
+#include "string.h"
+
+#include "FreeRTOS.h"
+#include "FreeRTOSConfig.h"
+#include "task.h"
+
 #include "uartDriver.h"
+#include "operations.h"
 
 /*==================[cplusplus]==============================================*/
 
@@ -47,28 +54,37 @@ extern "C" {
 
 /*==================[macros]=================================================*/
 
+#define LENGTH_QUEUE_AO				10
+#define MAX_ACTIVE_OBJECTS_NUMBER	2
+
 /*==================[typedef]================================================*/
 
 typedef enum
 {
-	ERROR_1,
-	ERROR_2,
-	ERROR_3,
-	NO_ERROR,
-} eMessageError_t;
+	UART_PACKET_MM,
+} eEventType_t;
+
+typedef struct
+{
+	eEventType_t EventType;
+	MessageData_t xMessage;
+} UartDriverEvent_t;
+
+typedef struct
+{
+	TaskFunction_t xTaskFuncion;
+	QueueHandle_t xQueue;
+} ActiveObjectConf_t;
 
 /*==================[external data declaration]==============================*/
 
+ActiveObjectConf_t xActiveObject[ MAX_ACTIVE_OBJECTS_NUMBER ];
+
 /*==================[external functions declaration]=========================*/
-void vExtractMessage( MessageData_t *pxMessage );
-uint8_t crc8_init(void);
-uint8_t crc8_calc(uint8_t val, void *buf, int cnt);
-void vCrcByteToChar( uint8_t ucCrc, uint8_t *puc );
-uint8_t ucCrcCharToByte( uint8_t ucCrc1, uint8_t ucCrc0);
-bool_t bCheckCrc( MessageData_t *pxMessage );
-void vAddStartAndEndCharacters( MessageData_t *pxMessage );
-void vAddCrc( MessageData_t *pxMessage );
-bool_t bCheckPacket( MessageData_t *pxMessage );
+
+void vSendToActiveObject( UartDriverEvent_t *pxUartDriverEvent, ActiveObjectConf_t *xActiveObject );
+void xCreateActiveObject( ActiveObjectConf_t *xActiveObjectConf );
+void vDeleteActiveObject( TaskHandle_t xTask, QueueHandle_t xQueue );
 
 /*==================[cplusplus]==============================================*/
 
@@ -79,4 +95,4 @@ bool_t bCheckPacket( MessageData_t *pxMessage );
 /** @} doxygen end group definition */
 /*==================[end of file]============================================*/
 
-#endif /* #ifndef _UTILS_H_ */
+#endif /* #ifndef _ACTIVEOBJECT_H_ */

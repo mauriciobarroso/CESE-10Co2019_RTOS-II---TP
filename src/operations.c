@@ -47,48 +47,30 @@
 
 /*==================[internal functions declaration]=========================*/
 
-static void vCharactersConvert( MessageData_t *pxMessage );
-
 /*==================[external functions definition]=========================*/
+
+void vLowercaseConvert( MessageData_t *pxMessage )
+{
+	for( uint8_t ucIndex = 1; ucIndex < pxMessage->ucLength; ucIndex++ )
+	{
+		if( pxMessage->pucBlock[ ucIndex ] <= 'Z' )
+			pxMessage->pucBlock[ ucIndex ] += CONVERSION_FACTOR;
+	}
+}
+
+void vUppercaseConvert( MessageData_t *pxMessage )
+{
+	for( uint8_t ucIndex = 1; ucIndex <= pxMessage->ucLength; ucIndex++ )
+	{
+		if( pxMessage->pucBlock[ ucIndex ] >= 'a' )
+			pxMessage->pucBlock[ ucIndex ] -= CONVERSION_FACTOR;
+	}
+}
 
 void vOperationError( MessageData_t *pxMessage)
 {
 	strcpy( pxMessage->pucBlock, "ERROR" );
 	pxMessage->ucLength = 5;
-}
-
-void vOperationSelect( MessageData_t *pxMessage )
-{
-	switch( pxMessage->pucBlock[ 0 ] )
-	{
-		case 'm':
-			vCharactersConvert( pxMessage );
-			break;
-		case 'M':
-			vCharactersConvert( pxMessage );
-			break;
-		default:
-			vOperationError( pxMessage );
-			break;
-	}
-}
-
-static void vCharactersConvert( MessageData_t *pxMessage )
-{
-	for( uint8_t ucIndex = 1; ucIndex < pxMessage->ucLength; ucIndex++ )
-	{
-		if( pxMessage->pucBlock[ 0 ] == 'm' )
-		{
-			if( pxMessage->pucBlock[ ucIndex ] <= 'Z' )
-				pxMessage->pucBlock[ ucIndex ] += CONVERSION_FACTOR;
-		}
-
-		else
-		{
-			if( pxMessage->pucBlock[ ucIndex ] >= 'a' )
-				pxMessage->pucBlock[ ucIndex ] -= CONVERSION_FACTOR;
-		}
-	}
 }
 
 /*==================[internal functions definition]==========================*/

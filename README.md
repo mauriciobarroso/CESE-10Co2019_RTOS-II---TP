@@ -57,8 +57,13 @@ Capa de aplicación(C3):
 - [x] R_C3-1
 - [x] R_C3-2
 - [x] R_C3-3
+- [x] R_C3-4
+- [ ] R_C3-5
+- [ ] R_C3-6
+- [ ] R_C3-7
+- [ ] R_C3-8
 
-Opcioanles:
+Opcionales:
 - [ ] R_OP-1
 
 # NOTAS

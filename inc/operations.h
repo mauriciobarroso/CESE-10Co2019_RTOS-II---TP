@@ -57,8 +57,9 @@ extern "C" {
 
 /*==================[external functions declaration]=========================*/
 
+void vLowercaseConvert( MessageData_t *pxMessage );
+void vUppercaseConvert( MessageData_t *pxMessage );
 void vOperationError( MessageData_t *pxMessage );
-void vOperationSelect( MessageData_t *pxMessage );
 
 /*==================[cplusplus]==============================================*/
 

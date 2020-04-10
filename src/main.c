@@ -39,6 +39,7 @@
 #include "task.h"
 #include "sapi.h"
 
+#include "activeObject.h"
 #include "userTasks.h"
 
 /*==================[macros]=================================================*/
@@ -74,7 +75,7 @@ int main(void)
 	   gpioWrite( LEDG, ON );
    /* creación de tareas */
    xTaskCreate( vTickTask, "Tick Task", configMINIMAL_STACK_SIZE * 2, NULL, tskIDLE_PRIORITY + 1, NULL );
-   xTaskCreate( vDriverTask, "Tick Task", configMINIMAL_STACK_SIZE * 2, ( void * )&xUartInstance, tskIDLE_PRIORITY + 2, NULL );
+   xTaskCreate( vDriverTask, "Driver Task", configMINIMAL_STACK_SIZE * 2, ( void * )&xUartInstance, tskIDLE_PRIORITY + 2, NULL );
    /* inicializacion del scheduler */
    vTaskStartScheduler();
 
