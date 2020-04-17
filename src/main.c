@@ -56,6 +56,8 @@ UartInstance_t xUartInstance;
 
 ActiveObjectConf_t xActiveObjectLowercase;
 ActiveObjectConf_t xActiveObjectUppercase;
+ActiveObjectConf_t xActiveObjectUpperLowercase;
+ActiveObjectConf_t xActiveObjectError;
 
 /*==================[internal functions declaration]=========================*/
 
@@ -66,14 +68,26 @@ int main(void)
    /* se inicializa la EDU-CIAA */
    boardConfig();
 
-   /* inicialización de los objetos activos */
-   xActiveObject[ 0 ].bAlive = 0;
-   xActiveObject[ 0 ].xCallback = vOperationLowercase;
-   xActiveObject[ 0 ].uxPriority = tskIDLE_PRIORITY + 3;
+   /* se crea registra un objeto activo asociado con un evento y un callback para minusculizar */
+   xActiveObjectLowercase.xCallback = vOperationLowercase;
+   xActiveObjectLowercase.uxPriority = tskIDLE_PRIORITY + 3;
+   bActiveObjectRegister( UART_PACKET_LOWERCASE, &xActiveObjectLowercase );
 
-   xActiveObject[ 1 ].bAlive = 0;
-   xActiveObject[ 1 ].xCallback = vOperationUppercase;
-   xActiveObject[ 1 ].uxPriority = tskIDLE_PRIORITY + 3;
+   /* se crea registra un objeto activo asociado con un evento y un callback para mayusculizar */
+   xActiveObjectUppercase.xCallback = vOperationUppercase;
+   xActiveObjectUppercase.uxPriority = tskIDLE_PRIORITY + 3;
+   bActiveObjectRegister( UART_PACKET_UPPERCASE, &xActiveObjectUppercase );
+
+   /* se crea registra un objeto activo asociado con un evento y un callback para mayusculizar/minusculizar
+    * de manera intercalada */
+   xActiveObjectUpperLowercase.xCallback = vOperationUpperLowercase;
+   xActiveObjectUpperLowercase.uxPriority = tskIDLE_PRIORITY + 3;
+   bActiveObjectRegister( UART_PACKET_UPPERLOWERCASE, &xActiveObjectUpperLowercase );
+
+   /* se crea registra un objeto activo asociado con un evento y un callback para manejar eventos no válidos */
+   xActiveObjectError.xCallback = vOperationError;
+   xActiveObjectError.uxPriority = tskIDLE_PRIORITY + 3;
+   bActiveObjectRegister( UART_PACKET_ERROR, &xActiveObjectError );
 
    /* se definen los parámetros de la UART */
    xUartInstance.xUartConfig.xName = UART_USB;
