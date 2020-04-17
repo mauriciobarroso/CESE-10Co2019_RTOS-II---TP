@@ -61,19 +61,23 @@ extern "C" {
 
 typedef enum
 {
-	UART_PACKET_MM,
+	UART_PACKET_LOWERCASE,
+	UART_PACKET_UPPERCASE,
 } eEventType_t;
 
 typedef struct
 {
 	eEventType_t EventType;
-	MessageData_t xMessage;
+	UartPacket_t xPacket;
 } UartDriverEvent_t;
 
 typedef struct
 {
-	TaskFunction_t xTaskFuncion;
+	bool_t bAlive;
 	QueueHandle_t xQueue;
+	TaskFunction_t xCallback;
+	UBaseType_t uxPriority;
+	TaskHandle_t xTaskHandle;
 } ActiveObjectConf_t;
 
 /*==================[external data declaration]==============================*/
@@ -82,9 +86,9 @@ ActiveObjectConf_t xActiveObject[ MAX_ACTIVE_OBJECTS_NUMBER ];
 
 /*==================[external functions declaration]=========================*/
 
-void vSendToActiveObject( UartDriverEvent_t *pxUartDriverEvent, ActiveObjectConf_t *xActiveObject );
-void xCreateActiveObject( ActiveObjectConf_t *xActiveObjectConf );
-void vDeleteActiveObject( TaskHandle_t xTask, QueueHandle_t xQueue );
+UartPacket_t vActiveObjectEventDispatcher( UartDriverEvent_t *pxUartDriverEvent );
+bool_t bActiveObjectCreate( ActiveObjectConf_t *xActiveObjectConf );
+void vActiveObjectDelete( ActiveObjectConf_t *pxActiveObjectConf );
 
 /*==================[cplusplus]==============================================*/
 
