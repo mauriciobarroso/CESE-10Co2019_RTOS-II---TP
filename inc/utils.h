@@ -37,8 +37,6 @@
 /*==================[inclusions]=============================================*/
 
 #include <stdint.h>
-#include <string.h>
-
 #include "uartDriver.h"
 
 /*==================[cplusplus]==============================================*/
@@ -62,15 +60,15 @@ typedef enum
 /*==================[external data declaration]==============================*/
 
 /*==================[external functions declaration]=========================*/
-void vExtractMessage( UartPacket_t *pxPacket );
+void vExtractMessage( MessageData_t *pxMessage );
 uint8_t crc8_init(void);
 uint8_t crc8_calc(uint8_t val, void *buf, int cnt);
 void vCrcByteToChar( uint8_t ucCrc, uint8_t *puc );
 uint8_t ucCrcCharToByte( uint8_t ucCrc1, uint8_t ucCrc0);
-bool_t bCheckCrc( UartPacket_t *pxPacket );
-void vAddStartAndEndCharacters( UartPacket_t *pxPacket );
-void vAddCrc( UartPacket_t *pxPacket );
-bool_t bCheckPacket( UartPacket_t *pxPacket );
+bool_t bCheckCrc( MessageData_t *pxMessage );
+void vAddStartAndEndCharacters( MessageData_t *pxMessage );
+void vAddCrc( MessageData_t *pxMessage );
+bool_t bCheckPacket( MessageData_t *pxMessage );
 
 /*==================[cplusplus]==============================================*/
 

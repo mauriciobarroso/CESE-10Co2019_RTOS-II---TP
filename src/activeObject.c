@@ -1,164 +1,228 @@
-/* Copyright 2020, Mauricio Barroso
- * All rights reserved.
+/*
+ * mM_module.c
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its
- *    contributors may be used to endorse or promote products derived from this
- *    software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ *  Created on: Apr 9, 2020
+ *      Author: pablo
  *
  */
 
-/* Date: 19/03/20 */
-
-/*==================[inclusions]============================================*/
-
 #include "activeObject.h"
+#include "sapi.h"
 
-/*==================[macros]=================================================*/
+xQueueHandle queueEvents;
 
-/*==================[typedef]================================================*/
+#define 	    		MAX_AO 5
+static ActiveObject_t 	ActiveObjects[MAX_AO];
+static int 		    	lastAO = 0;
 
-/*==================[internal data declaration]==============================*/
+static void vLowercaseConvert_mM( char * , int );
+static void vUppercaseConvert_mM( char * , int );
 
-static QueueHandle_t xQueue;
-static uint8_t ucActiveObjectNumber = 0;
-static ActiveObject_t xActiveObject[ MAX_ACTIVE_OBJECTS_NUMBER ];
 
-/*==================[external data declaration]==============================*/
-
-/*==================[internal functions declaration]=========================*/
-
-static void vThread( void *pvParameters );
-static void vActiveObjectSend( uint8_t ucActiveObjectNumber, UartDriverEvent_t *pxUartDriverEvent );
-
-/*==================[external functions definition]=========================*/
-
-bool_t bActiveObjectRegister( eEventType_t eEventType, ActiveObjectConf_t *pxActiveObjectConf )
+bool_t bCreateActiveObject_m( MessageData_t * pxMessage)
 {
-	if( ucActiveObjectNumber >= MAX_ACTIVE_OBJECTS_NUMBER )
-		return FALSE;
+	ActiveObject_m  = xRegistActiveObject( vEventManager_m );
 
-	xActiveObject[ ucActiveObjectNumber ].eEventType = eEventType;
-	xActiveObject[ ucActiveObjectNumber ].xActiveObjectConf.bAlive = 0;
-	xActiveObject[ ucActiveObjectNumber ].xActiveObjectConf.uxPriority = pxActiveObjectConf->uxPriority;
-	xActiveObject[ ucActiveObjectNumber ].xActiveObjectConf.xCallback = pxActiveObjectConf->xCallback;
-
-	ucActiveObjectNumber++;
-
-	return TRUE;
-}
-
-UartPacket_t vActiveObjectEventDispatcher( UartDriverEvent_t *pxUartDriverEvent )
-{
-	UartPacket_t xPacket;
-	/* se crea la cola par recibir los paquetes procesados por los objetos activos */
-	xQueue = xQueueCreate( 4, sizeof( UartPacket_t ) );
-
-	/**/
-	for( uint8_t i = 0; i < MAX_ACTIVE_OBJECTS_NUMBER; i++ )
+	if (xTaskCreate( vTaskActiveObject_m, "vTaskActiveObject_m", configMINIMAL_STACK_SIZE * 2, NULL, tskIDLE_PRIORITY + 4, ActiveObject_m->TH ))
 	{
-		if( xActiveObject[ i ].eEventType == pxUartDriverEvent->EventType )
-			vActiveObjectSend( i, pxUartDriverEvent );
+		vPutQueueEvent( ActiveObject_m, SIG_CONVERTIR_LOWERCASE, pxMessage->pucBlock, pxMessage->ucLength );
+		return TRUE;
 	}
-
-	/* se recibe el paquete procesado por el objeto activo y luego se elimina la cola */
-	xQueueReceive( xQueue, &xPacket, portMAX_DELAY );
-	vQueueDelete( xQueue );
-	/* retorna el paquete procesado */
-	return xPacket;
+	return FALSE;
 }
 
-bool_t bActiveObjectCreate( ActiveObjectConf_t *pxActiveObjectConf )
+bool_t bCreateActiveObject_M( MessageData_t * pxMessage)
 {
-	BaseType_t xStatus;
-	/* se crea la cola de recepción para el paquede del objeto activo  y retorna FALSE si no se creo correctamente*/
-	pxActiveObjectConf->xQueue = xQueueCreate( LENGTH_QUEUE_AO, sizeof( ActiveObjectConf_t ) );
-	if( pxActiveObjectConf->xQueue == NULL )
-		return FALSE;
-	/* se crea el thread en el que corre el objeto activo y retorna FALSE si no se creo correctamente */
-	xStatus = xTaskCreate( vThread, "Active Object", configMINIMAL_STACK_SIZE * 2, ( void * )pxActiveObjectConf, pxActiveObjectConf->uxPriority, pxActiveObjectConf->xTask );
-	if( !xStatus == pdPASS  )
-		return FALSE;
-	/* retorna TRUE si se crearon correctamente la cola y el thread */
-	return TRUE;
-}
+	ActiveObject_M  = xRegistActiveObject( vEventManager_M  );
 
-void vActiveObjectDelete( ActiveObjectConf_t *pxActiveObjectConf )
-{
-	/* se elimina la cola de recepción de paquetes del objeto activo */
-	vQueueDelete( pxActiveObjectConf->xQueue );
-	/* se elimina el thread del objeto activo */
-	vTaskDelete( pxActiveObjectConf->xTask );
-}
-
-/*==================[internal functions definition]==========================*/
-
-static void vThread( void *pvParameters )
-{
-	ActiveObjectConf_t *xActiveObject = ( ActiveObjectConf_t * )pvParameters;
-	UartDriverEvent_t xUartDriverEvent;
-
-	for( ;; )
+	if (xTaskCreate( vTaskActiveObject_M, "vTaskActiveObject_M", configMINIMAL_STACK_SIZE * 2, NULL, tskIDLE_PRIORITY + 4, ActiveObject_M->TH ));
 	{
-		/* se recibe por la cola el paquete a procesar, mientras queda bloqueado indefinidamente */
-		xQueueReceive( xActiveObject->xQueue, &xUartDriverEvent, portMAX_DELAY );
+		vPutQueueEvent( ActiveObject_M, SIG_CONVERTIR_UPPERCASE, pxMessage->pucBlock, pxMessage->ucLength );
+		return TRUE;
+	}
+	return FALSE;
+}
 
-		/* se ejecuta la función de callback y se procesa el paquete */
-		xActiveObject->xCallback( &xUartDriverEvent.xPacket );
-		/* se envia a la cola de recepción del despachador de eventos el paquete procesado */
-		xQueueSend( xQueue, ( void * )&xUartDriverEvent.xPacket, 0 );
-		/* se comprueba si no existen paquetes para procesar en la cola */
-		if( !uxQueueMessagesWaiting( xActiveObject->xQueue ) )
-		{
-			/* se destruye el objeto activo */
-			xActiveObject->bAlive = 0;
-			vActiveObjectDelete( xActiveObject );
+
+void vDeleteActiveObject( ActiveObject_t * AO )
+{
+	TaskHandle_t miTH;
+	miTH = AO->TH;
+	vUnRegistActiveObject( AO );
+	vTaskDelete( miTH );
+}
+
+
+
+void vTaskActiveObject_m ( void * noUsed )
+{
+// Manejo de eventos:
+// Esta siempre bloqueada salvo que tenga un evento que manejar.
+// En cuanto hay un evento, lo despacho a la FSM correspondiente SIN BLOQUEAR
+
+    Evento_t evn;
+    for( ;; )
+    {
+    	xQueueReceive( queueEvents, &evn, portMAX_DELAY );
+    	vDispatchEvent( &evn );
+    }
+}
+
+void vTaskActiveObject_M ( void * noUsed )
+{
+// Manejo de eventos:
+// Esta siempre bloqueada salvo que tenga un evento que manejar.
+// En cuanto hay un evento, lo despacho a la FSM correspondiente SIN BLOQUEAR
+
+    Evento_t evn;
+    for( ;; )
+    {
+    	xQueueReceive( queueEvents, &evn, portMAX_DELAY );
+    	vDispatchEvent( &evn );
+    }
+}
+
+
+void vEventManager_m ( Evento_t *evn )
+{
+	switch( evn->signal )
+	{
+		case SIG_INICIAR:
+			//Ok!!
+			break;
+		case SIG_CONVERTIR_LOWERCASE:
+			vLowercaseConvert_mM( evn->pChar, evn->largo );
+			vPutQueueEvent( Modulo_Op, SIG_OK_CONVERSION_m, evn->pChar, evn->largo );
+			break;
+		default:
+			//Ups!!
+			break;
+	}
+}
+
+void vEventManager_M ( Evento_t *evn )
+{
+    switch( evn->signal )
+    {
+		case SIG_INICIAR:
+			//Ok!!
+			break;
+		case SIG_CONVERTIR_UPPERCASE:
+			vUppercaseConvert_mM( evn->pChar, evn->largo );
+			vPutQueueEvent( Modulo_Op, SIG_OK_CONVERSION_M, evn->pChar, evn->largo );
+			break;
+		default:
+			//Ups!!
+			break;
+    }
+}
+
+
+ActiveObject_t * xRegistActiveObject ( fsm_ptr manejadorEventos )
+{
+    if( lastAO >= MAX_AO )
+    {
+    	perror("Error: Superado maximo numero de Activ Objects");
+        return NULL;
+    }
+
+    ActiveObject_t * pAO 	= &ActiveObjects[ lastAO ];
+    pAO->manejadorEventos	= manejadorEventos;
+    pAO->TH 				= NULL; //TaskHandle
+    pAO->param_aux_1        = 0;
+    pAO->param_aux_2 		= 0;
+
+    lastAO ++;
+    return pAO;// ++;
+}
+
+void vUnRegistActiveObject ( ActiveObject_t * AO )
+{
+	for (int i= 0; i< lastAO; i++){
+		if ( AO == &ActiveObjects[ i ] ){
+			lastAO--;
+			for ( int j = i; j< lastAO; j++){
+				ActiveObjects[ i ].TH = ActiveObjects[ i+1 ].TH;
+				ActiveObjects[ i ].manejadorEventos = ActiveObjects[ i+1 ].manejadorEventos;
+				ActiveObjects[ i ].param_aux_1 = ActiveObjects[ i+1 ].param_aux_1;
+				ActiveObjects[ i ].param_aux_2 = ActiveObjects[ i+1 ].param_aux_2;
+			}
 		}
 	}
 }
 
-static void vActiveObjectSend( uint8_t ucActiveObjectNumber, UartDriverEvent_t *pxUartDriverEvent )
+/*
+void vInitActiveObjects ( void )
 {
-	/* se comprueba si el objeto activo ya fue creado */
-	if( !xActiveObject[ ucActiveObjectNumber ].xActiveObjectConf.bAlive )
-	{
-		/* se comprueba que el objeto activo se creo correctamente y se envia el paquete a procesar */
-		if( bActiveObjectCreate( &xActiveObject[ ucActiveObjectNumber ].xActiveObjectConf ) )
-		{
-			xActiveObject[ ucActiveObjectNumber ].xActiveObjectConf.bAlive = 1;
-			xQueueSend( xActiveObject[ ucActiveObjectNumber ].xActiveObjectConf.xQueue, ( void * )pxUartDriverEvent, 0 );
-		}
-		/* si no se pudo crear el objeto activo entonces se devuelve un mensaje de error */
-		else
-		{
-			vOperationError( &pxUartDriverEvent->xPacket );
-			xQueueSend( xQueue, ( void * )&pxUartDriverEvent->xPacket, 0 );
-		}
-	}
-	/* si el objeto activo ya fue creado se envia el paquete a procesar */
-	else
-		xQueueSend( xActiveObject[ ucActiveObjectNumber ].xActiveObjectConf.xQueue, ( void * )pxUartDriverEvent, 0 );
+    Evento_t evn;
+
+    for ( int ao = 0; ao < lastAO; ++ao )
+    {
+        evn.signal 		= SIG_INICIAR;
+        evn.receptor 	= &ActiveObjects[ ao ]; 	//puntero al AO
+        evn.pChar		= NULL;
+        evn.largo		= 0;
+
+        vDispatchEvent( &evn );
+    }
+}
+*/
+
+void vTaskEventDispatch ( void * noUsed )
+{
+// Manejo de eventos:
+// Esta siempre bloqueada salvo que tenga un evento que manejar.
+// En cuanto hay un evento, lo despacho a la FSM correspondiente SIN BLOQUEAR
+
+    Evento_t evn;
+    for( ;; )
+    {
+    	xQueueReceive( queueEvents, &evn, portMAX_DELAY );
+    	vDispatchEvent( &evn );
+    }
 }
 
-/*==================[end of file]============================================*/
+void vDispatchEvent( Evento_t *evento )
+{
+//  Llama al manejador de eventos correspondiente al módulo enviado
+    fsm_ptr manejadorEventos = ( evento->receptor )->manejadorEventos;
+    manejadorEventos( evento ); //Al receptor del evento le paso el evento
+}
+
+//envia el evento, toma los argumentos del evento en crudo
+void vPutQueueEvent ( ActiveObject_t * receptor , Signal_t senhal, char * pChar, int largo )
+{
+    Evento_t evn;
+
+    evn.receptor	= receptor;
+    evn.signal		= senhal;
+    evn.pChar       = pChar;
+    evn.largo		= largo;
+
+    xQueueSend( queueEvents, &evn, 0 );
+    return;
+}
+
+static void vLowercaseConvert_mM( char *pMessage, int length )
+{
+	for( uint8_t ucIndex = 1; ucIndex < length; ucIndex++ )
+	{
+		if( pMessage[ ucIndex ] <= 'Z' )
+			pMessage[ ucIndex ] += 32;
+	}
+}
+
+static void vUppercaseConvert_mM( char *pMessage, int length  )
+{
+	for( uint8_t ucIndex = 1; ucIndex <= length; ucIndex++ )
+	{
+		if( pMessage[ ucIndex ] >= 'a' )
+			pMessage[ ucIndex ] -= 32;
+	}
+}
+
+
+
+
+
+

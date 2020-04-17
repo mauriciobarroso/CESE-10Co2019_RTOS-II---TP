@@ -61,37 +61,29 @@ extern "C" {
 #define POOL_SIZE			POOL_TOTAL_BLOCKS * BLOCK_SIZE	// tamaño total del pool
 
 /*==================[typedef]================================================*/
+typedef struct
+{
+	char *pucBlock;
+	uint8_t ucLength;
+} MessageData_t;
 
 typedef struct
 {
-	uartMap_t xName;		// nombre de la UART
-	uint32_t ulBaudRate;	// baudrate de la UART
-} UartConfig_t;
-
-typedef struct
-{
-	char *pucBlock;		// puntero al bloque de memoria donde se aljo el paquete
-	uint8_t ucLength;	// longitud del paquete
-} UartPacket_t;
-
-typedef struct
-{
-	TimerHandle_t xRx;	// timer de recepcióm
-	TimerHandle_t xTx;	// timer de transmisión
+	TimerHandle_t xRx;
+	TimerHandle_t xTx;
 } TimerTimeout_t;
 
 typedef struct
 {
-	QueueHandle_t xRx;	// cola de recpción de paquetes
-	QueueHandle_t xTx;	// cola de transmisión de paquetes
-} Queue_t;
-/*
+	uartMap_t xName;
+	uint32_t ulBaudRate;
+} UartConfig_t;
+
 typedef struct
 {
-	UartPacket_t xPacket;
-	TimerHandle_t xTimer;
-	QueueHandle_t xQueue;
-} Uart_t;*/
+	QueueHandle_t xRx;
+	QueueHandle_t xTx;
+} Queue_t;
 
 typedef struct
 {
@@ -101,9 +93,9 @@ typedef struct
 
 typedef struct
 {
-	UartConfig_t xUartConfig;		// datos de configuración de la UART
-	UartPacket_t xRxPacket;			// paquete de recepción
-	UartPacket_t xTxPacket;			// paquete de transmisión
+	UartConfig_t xUartConfig;		// datos de configuraciónd de la UART
+	MessageData_t xRxMessage;
+	MessageData_t xTxMessage;
 	TimerTimeout_t xTimerTimeout;	// manejador de los timers
 	Queue_t xQueue;					// manejador de las colas
 	uint8_t ucTxCounter;			// contador de los datos a transmitir

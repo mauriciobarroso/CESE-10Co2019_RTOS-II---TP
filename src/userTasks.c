@@ -45,14 +45,10 @@
 
 void vTickTask( void* pvParameters )
 {
-	TickType_t xLastWakeTime;
-
-	xLastWakeTime = xTaskGetTickCount();
-
 	for( ;; ) {
 		gpioToggle( LED3 );
 
-		vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 250 ) );
+		vTaskDelay( pdMS_TO_TICKS( 250 ) );
 	}
 }
 

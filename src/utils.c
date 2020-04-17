@@ -50,16 +50,16 @@ static uint8_t crc8_small_table[16] = {
 
 /*==================[internal functions declaration]=========================*/
 
-static eMessageError_t eMessageErrorType( UartPacket_t *pxPacket );
+static eMessageError_t eMessageErrorType( MessageData_t *pxMessage );
 
 /*==================[external functions definition]=========================*/
 
-void vExtractMessage( UartPacket_t *pxPacket )
+void vExtractMessage( MessageData_t *pxMessage )
 {
-	for( uint8_t i = 0; i <= pxPacket->ucLength - 2; i++ )	// 4 hardcodeado
-		pxPacket->pucBlock[ i ] = pxPacket->pucBlock[ i + 1 ];
+	for( uint8_t i = 0; i <= pxMessage->ucLength - 2; i++ )	// 4 hardcodeado
+		pxMessage->pucBlock[ i ] = pxMessage->pucBlock[ i + 1 ];
 	/* se reduce el largo del string en 3 */
-	pxPacket->ucLength -= 2;
+	pxMessage->ucLength -= 2;
 }
 
 
@@ -114,57 +114,55 @@ uint8_t ucCrcCharToByte( uint8_t ucCrc1, uint8_t ucCrc0)
 	return ucCrc;
 }
 
-bool_t bCheckCrc( UartPacket_t *pxPacket )
+bool_t bCheckCrc( MessageData_t *pxMessage )
 {
 	uint8_t ucCrc1;
 	uint8_t ucCrc2;
 
-	ucCrc1 = crc8_calc( 0, pxPacket->pucBlock, pxPacket->ucLength - 2 );
+	ucCrc1 = crc8_calc( 0, pxMessage->pucBlock, pxMessage->ucLength - 2 );
 
-	ucCrc2 = ucCrcCharToByte( pxPacket->pucBlock[ pxPacket->ucLength - 2 ], pxPacket->pucBlock[ pxPacket->ucLength - 1 ] );
+	ucCrc2 = ucCrcCharToByte( pxMessage->pucBlock[ pxMessage->ucLength - 2 ], pxMessage->pucBlock[ pxMessage->ucLength - 1 ] );
 
 	if( ucCrc1 != ucCrc2 )
 		return FALSE;
 
-	pxPacket->ucLength -= 2;
-
 	return TRUE;
 }
 
-void vAddStartAndEndCharacters( UartPacket_t *pxPacket )
+void vAddStartAndEndCharacters( MessageData_t *pxMessage )
 {
-	for( uint8_t i = pxPacket->ucLength; i != 0; i-- )
-		pxPacket->pucBlock[ i ] = pxPacket->pucBlock[ i - 1 ];
+	for( uint8_t i = pxMessage->ucLength; i != 0; i-- )
+		pxMessage->pucBlock[ i ] = pxMessage->pucBlock[ i - 1 ];
 
-	pxPacket->ucLength += 2;
+	pxMessage->ucLength += 2;
 
-	pxPacket->pucBlock[ 0 ] = '(';
-	pxPacket->pucBlock[ pxPacket->ucLength - 1 ] = ')';
+	pxMessage->pucBlock[ 0 ] = '(';
+	pxMessage->pucBlock[ pxMessage->ucLength - 1 ] = ')';
 }
 
-void vAddCrc( UartPacket_t *pxPacket )
+void vAddCrc( MessageData_t *pxMessage )
 {
-	uint8_t crc = crc8_calc( 0, pxPacket->pucBlock, pxPacket->ucLength );
+	uint8_t crc = crc8_calc( 0, pxMessage->pucBlock, pxMessage->ucLength );
 	uint8_t bCrc[2];
 	vCrcByteToChar( crc, bCrc );
 
-	pxPacket->ucLength += 2;
-	pxPacket->pucBlock[ pxPacket->ucLength - 2 ] = bCrc[1];
-	pxPacket->pucBlock[ pxPacket->ucLength - 1 ] = bCrc[0];
+	pxMessage->ucLength += 2;
+	pxMessage->pucBlock[ pxMessage->ucLength - 2 ] = bCrc[1];
+	pxMessage->pucBlock[ pxMessage->ucLength - 1 ] = bCrc[0];
 }
 
-bool_t bCheckPacket( UartPacket_t *pxPacket )
+bool_t bCheckPacket( MessageData_t *pxMessage )
 {
-	switch( eMessageErrorType( pxPacket ) )
+	switch( eMessageErrorType( pxMessage ) )
 	{
 		case ERROR_1:
-			strcpy( pxPacket->pucBlock, " ERROR_1" );
-			pxPacket->ucLength = 7;
+			strcpy( pxMessage->pucBlock, " ERROR_1" );
+			pxMessage->ucLength = 7;
 			return FALSE;
 
 		case ERROR_2:
-			strcpy( pxPacket->pucBlock, " ERROR_2" );
-			pxPacket->ucLength = 7;
+			strcpy( pxMessage->pucBlock, " ERROR_2" );
+			pxMessage->ucLength = 7;
 			return FALSE;
 
 		default:
@@ -177,12 +175,12 @@ bool_t bCheckPacket( UartPacket_t *pxPacket )
 /*==================[internal functions definition]==========================*/
 
 
-static eMessageError_t eMessageErrorType( UartPacket_t *pxPacket )
+static eMessageError_t eMessageErrorType( MessageData_t *pxMessage )
 {
-    if ( pxPacket->pucBlock[ 0 ] != '(' )
+    if ( pxMessage->pucBlock[ 0 ] != '(' )
     	return ERROR_1;
 
-    if ( pxPacket->pucBlock[ pxPacket->ucLength - 1 ] != ')' )
+    if ( pxMessage->pucBlock[ pxMessage->ucLength - 1 ] != ')' )
     	return ERROR_2;
 
     return NO_ERROR;

@@ -1,110 +1,80 @@
-/* Copyright 2020, Mauricio Barroso
- * All rights reserved.
+/*
+ * mM_module.h
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its
- *    contributors may be used to endorse or promote products derived from this
- *    software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- *
+ *  Created on: Apr 9, 2020
+ *      Author: pablo
  */
 
-/* Date: 19/03/20 */
-
-#ifndef _ACTIVEOBJECT_H_
-#define _ACTIVEOBJECT_H_
-
-/*==================[inclusions]=============================================*/
-
-#include <stdint.h>
-#include "string.h"
-
-#include "FreeRTOS.h"
-#include "FreeRTOSConfig.h"
-#include "task.h"
+#ifndef _MM_AO_H_
+#define _MM_AO_H_
 
 #include "uartDriver.h"
-#include "operations.h"
 
-/*==================[cplusplus]==============================================*/
+typedef struct ActiveObject_t ActiveObject_t;
+typedef struct Evento_t Evento_t;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+typedef void ( *fsm_ptr ) ( Evento_t * );
 
-/*==================[macros]=================================================*/
+typedef struct ActiveObject_t
+{
+    fsm_ptr	 	 manejadorEventos;
+    TaskHandle_t TH;
+    //QueueHandle_t QH
+    int 	     param_aux_1;
+    int 		 param_aux_2;
+} ActiveObject_t;
 
-#define LENGTH_QUEUE_AO				10
-#define MAX_ACTIVE_OBJECTS_NUMBER	5
 
-/*==================[typedef]================================================*/
+typedef struct Evento_t
+{
+	ActiveObject_t * receptor;
+    int				 signal;
+    char *			 pChar;
+    int			     largo;
+} Evento_t;
 
 typedef enum
 {
-	UNKNOW,
-	UART_PACKET_LOWERCASE,
-	UART_PACKET_UPPERCASE,
-	UART_PACKET_UPPERLOWERCASE,
-	UART_PACKET_ERROR
-} eEventType_t;
+    SIG_INICIAR   			=0,
+	SIG_CONVERTIR_UPPERCASE	  ,
+	SIG_CONVERTIR_LOWERCASE   ,
+	SIG_FINALIZAR			  ,
+	SIG_OK_CONVERSION         ,
+	SIG_OK_CONVERSION_m       ,
+	SIG_OK_CONVERSION_M       ,
+} Signal_t;
 
-typedef struct
-{
-	eEventType_t EventType;
-	UartPacket_t xPacket;
-} UartDriverEvent_t;
+//Aqui debo declarar como extern todos los Active Objects que use
+extern ActiveObject_t * ActiveObject_m;
+extern ActiveObject_t * ActiveObject_M;
+extern ActiveObject_t * Modulo_Op;
 
-typedef struct
-{
-	bool_t bAlive;
-	QueueHandle_t xQueue;
-	TaskFunction_t xCallback;
-	UBaseType_t uxPriority;
-	TaskHandle_t xTask;
-} ActiveObjectConf_t;
+//El Queue de los eventos:
+extern xQueueHandle queueEvents;
 
-typedef struct
-{
-	eEventType_t eEventType;
-	ActiveObjectConf_t xActiveObjectConf;
-} ActiveObject_t;
+//Funciones Específicas de cada AO
 
-/*==================[external data declaration]==============================*/
+//ActiveObject_m
+bool_t bCreateActiveObject_m( MessageData_t * );
+void vTaskActiveObject_m ( void * );
+void vEventManager_m ( Evento_t * );
 
-/*==================[external functions declaration]=========================*/
+//ActiveObject_m
+bool_t bCreateActiveObject_M( MessageData_t * );
+void vTaskActiveObject_M ( void * );
+void vEventManager_M ( Evento_t * );
 
-bool_t bActiveObjectRegister( eEventType_t eEventType, ActiveObjectConf_t *pxActiveObjectConf );
-UartPacket_t vActiveObjectEventDispatcher( UartDriverEvent_t *pxUartDriverEvent );
-bool_t bActiveObjectCreate( ActiveObjectConf_t *xActiveObjectConf );
-void vActiveObjectDelete( ActiveObjectConf_t *pxActiveObjectConf );
+//Funciones Generales para todos los AO
 
-/*==================[cplusplus]==============================================*/
+ActiveObject_t * xRegistActiveObject( fsm_ptr manejadorEventos );
+void			 vUnRegistActiveObject( ActiveObject_t * );
+//void             vInitActiveObjects ( void );
+void vTaskEventDispatch ( void * );
+void vDispatchEvent     ( Evento_t * );
 
-#ifdef __cplusplus
-}
-#endif
+void vPutQueueEvent     ( ActiveObject_t *, Signal_t, char *, int );
 
-/** @} doxygen end group definition */
-/*==================[end of file]============================================*/
+void vDeleteActiveObject( ActiveObject_t *);
 
-#endif /* #ifndef _ACTIVEOBJECT_H_ */
+
+#endif /* _MM_AO_H_ */
