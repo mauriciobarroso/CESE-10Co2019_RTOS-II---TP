@@ -48,7 +48,7 @@ QueueHandle_t xQueue;
 /*==================[internal functions declaration]=========================*/
 
 static void vThread( void *pvParameters );
-static void algo( uint8_t ucActiveObjectNumber, UartDriverEvent_t *pxUartDriverEvent );
+static void vActiveObjectSend( uint8_t ucActiveObjectNumber, UartDriverEvent_t *pxUartDriverEvent );
 
 /*==================[external functions definition]=========================*/
 
@@ -62,14 +62,14 @@ UartPacket_t vActiveObjectEventDispatcher( UartDriverEvent_t *pxUartDriverEvent 
 	{
 		case UART_PACKET_LOWERCASE:
 		{
-			algo( 0, pxUartDriverEvent );
+			vActiveObjectSend( 0, pxUartDriverEvent );
 
 			break;
 		}
 
 		case UART_PACKET_UPPERCASE:
 		{
-			algo( 1, pxUartDriverEvent );
+			vActiveObjectSend( 1, pxUartDriverEvent );
 
 			break;
 		}
@@ -137,7 +137,7 @@ static void vThread( void *pvParameters )
 	}
 }
 
-static void algo( uint8_t ucActiveObjectNumber, UartDriverEvent_t *pxUartDriverEvent )
+static void vActiveObjectSend( uint8_t ucActiveObjectNumber, UartDriverEvent_t *pxUartDriverEvent )
 {
 	/* se comprueba si el objeto activo ya fue creado */
 	if( !xActiveObject[ ucActiveObjectNumber ].bAlive )
