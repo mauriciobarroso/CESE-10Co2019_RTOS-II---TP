@@ -51,6 +51,7 @@
 
 /*==================[external functions definition]=========================*/
 
+<<<<<<< HEAD
 void vEventManager_Op ( Evento_t *evn )
 {
     switch( evn->signal )
@@ -79,11 +80,15 @@ void vOperationError( MessageData_t *pxMessage)
 	strcpy( pxMessage->pucBlock, "ERROR" );
 	pxMessage->ucLength = sizeof( "ERROR" );
 }
-
-void vOperationSelect( MessageData_t *pxMessage )
+=======
+void vOperationLowercase( void *pvParameters )
 {
-	switch( pxMessage->pucBlock[ 0 ] )
+	UartPacket_t *pxPacket = ( UartPacket_t * )pvParameters;
+>>>>>>> develop
+
+	for( uint8_t ucIndex = 1; ucIndex < pxPacket->ucLength; ucIndex++ )
 	{
+<<<<<<< HEAD
 		case 'm':
 			//vLowercaseConvert( pxMessage );
 			xTaskCreate( vTaskModulo_m, "vTaskModulo_m", configMINIMAL_STACK_SIZE * 2, NULL, tskIDLE_PRIORITY + 4, vTaskModulo_m_Handle );
@@ -100,6 +105,32 @@ void vOperationSelect( MessageData_t *pxMessage )
 	}
 }
 
+=======
+		if( pxPacket->pucBlock[ ucIndex ] <= 'Z' )
+			pxPacket->pucBlock[ ucIndex ] += CONVERSION_FACTOR;
+	}
+}
+
+void vOperationUppercase( void *pvParameters )
+{
+	UartPacket_t *pxPacket = ( UartPacket_t * )pvParameters;
+
+	for( uint8_t ucIndex = 1; ucIndex <= pxPacket->ucLength; ucIndex++ )
+	{
+		if( pxPacket->pucBlock[ ucIndex ] >= 'a' )
+			pxPacket->pucBlock[ ucIndex ] -= CONVERSION_FACTOR;
+	}
+}
+
+void vOperationError( void *pvParameters )
+{
+	UartPacket_t *pxPacket = ( UartPacket_t * )pvParameters;
+
+	strcpy( pxPacket->pucBlock, "ERROR" );
+	pxPacket->ucLength = 5;
+}
+
+>>>>>>> develop
 /*==================[internal functions definition]==========================*/
 
 /*==================[end of file]============================================*/

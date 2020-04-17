@@ -60,8 +60,9 @@ extern "C" {
 
 /*==================[external functions declaration]=========================*/
 
-void vOperationError( MessageData_t *pxMessage );
-void vOperationSelect( MessageData_t *pxMessage );
+void vOperationLowercase( void *pvParameters );
+void vOperationUppercase( void *pvParameters );
+void vOperationError( void *pvParameters );
 
 /*==================[cplusplus]==============================================*/
 

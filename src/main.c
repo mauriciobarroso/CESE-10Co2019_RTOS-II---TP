@@ -39,6 +39,7 @@
 #include "task.h"
 #include "sapi.h"
 
+#include "activeObject.h"
 #include "userTasks.h"
 
 #include "eventos.h"
@@ -56,12 +57,17 @@
 
 UartInstance_t xUartInstance;
 
+<<<<<<< HEAD
 Modulo_t * Modulo_m;
 Modulo_t * Modulo_M;
 Modulo_t * Modulo_Op;
 
 TaskHandle_t vTaskModulo_m_Handle = NULL;
 TaskHandle_t vTaskModulo_M_Handle = NULL;
+=======
+ActiveObjectConf_t xActiveObjectLowercase;
+ActiveObjectConf_t xActiveObjectUppercase;
+>>>>>>> develop
 
 /*==================[internal functions declaration]=========================*/
 
@@ -71,6 +77,16 @@ int main(void)
 {
    /* se inicializa la EDU-CIAA */
    boardConfig();
+
+   /**/
+   xActiveObject[ 0 ].bAlive = 0;
+   xActiveObject[ 0 ].xCallback = vOperationLowercase;
+   xActiveObject[ 0 ].uxPriority = tskIDLE_PRIORITY + 3;
+
+   xActiveObject[ 1 ].bAlive = 0;
+   xActiveObject[ 1 ].xCallback = vOperationUppercase;
+   xActiveObject[ 1 ].uxPriority = tskIDLE_PRIORITY + 3;
+
    /* se definen los parámetros de la UART */
    xUartInstance.xUartConfig.xName = UART_USB;
    xUartInstance.xUartConfig.ulBaudRate = 115200;
@@ -98,7 +114,7 @@ int main(void)
 
    /* creación de tareas */
    xTaskCreate( vTickTask, "Tick Task", configMINIMAL_STACK_SIZE * 2, NULL, tskIDLE_PRIORITY + 1, NULL );
-   xTaskCreate( vDriverTask, "Tick Task", configMINIMAL_STACK_SIZE * 2, ( void * )&xUartInstance, tskIDLE_PRIORITY + 2, NULL );
+   xTaskCreate( vDriverTask, "Driver Task", configMINIMAL_STACK_SIZE * 2, ( void * )&xUartInstance, tskIDLE_PRIORITY + 2, NULL );
    /* inicializacion del scheduler */
    vTaskStartScheduler();
 

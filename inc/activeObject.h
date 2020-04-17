@@ -31,20 +31,20 @@
 
 /* Date: 19/03/20 */
 
-#ifndef _UARTDRIVER_H_
-#define _UARTDRIVER_H_
+#ifndef _ACTIVEOBJECT_H_
+#define _ACTIVEOBJECT_H_
 
 /*==================[inclusions]=============================================*/
 
-#include "FreeRTOSConfig.h"
+#include <stdint.h>
+#include "string.h"
+
 #include "FreeRTOS.h"
-#include "queue.h"
-#include "timers.h"
+#include "FreeRTOSConfig.h"
 #include "task.h"
 
-#include "sapi.h"
-
-#include "qmpool.h"
+#include "uartDriver.h"
+#include "operations.h"
 
 /*==================[cplusplus]==============================================*/
 
@@ -54,68 +54,41 @@ extern "C" {
 
 /*==================[macros]=================================================*/
 
-#define PROTOCOL_TIMEOUT	pdMS_TO_TICKS( 50 )				// timeout para transmisión y recepción
-#define PACKET_SIZE			127 							// tamaño máximo de los paquetes
-#define BLOCK_SIZE			( PACKET_SIZE + 1 )				// tamaño de los bloques reservados
-#define POOL_TOTAL_BLOCKS	4								// catidad de bloques en el pool de memoria
-#define POOL_SIZE			POOL_TOTAL_BLOCKS * BLOCK_SIZE	// tamaño total del pool
+#define LENGTH_QUEUE_AO				10
+#define MAX_ACTIVE_OBJECTS_NUMBER	2
 
 /*==================[typedef]================================================*/
 
-typedef struct
+typedef enum
 {
-	uartMap_t xName;		// nombre de la UART
-	uint32_t ulBaudRate;	// baudrate de la UART
-} UartConfig_t;
+	UART_PACKET_LOWERCASE,
+	UART_PACKET_UPPERCASE,
+} eEventType_t;
 
 typedef struct
 {
-	char *pucBlock;		// puntero al bloque de memoria donde se aljo el paquete
-	uint8_t ucLength;	// longitud del paquete
-} UartPacket_t;
-
-typedef struct
-{
-	TimerHandle_t xRx;	// timer de recepcióm
-	TimerHandle_t xTx;	// timer de transmisión
-} TimerTimeout_t;
-
-typedef struct
-{
-	QueueHandle_t xRx;	// cola de recpción de paquetes
-	QueueHandle_t xTx;	// cola de transmisión de paquetes
-} Queue_t;
-/*
-typedef struct
-{
+	eEventType_t EventType;
 	UartPacket_t xPacket;
-	TimerHandle_t xTimer;
+} UartDriverEvent_t;
+
+typedef struct
+{
+	bool_t bAlive;
 	QueueHandle_t xQueue;
-} Uart_t;*/
-
-typedef struct
-{
-	char *pucPoolStorage;
-	QMPool xTxPool;
-} MemoryPool_t;
-
-typedef struct
-{
-	UartConfig_t xUartConfig;		// datos de configuración de la UART
-	UartPacket_t xRxPacket;			// paquete de recepción
-	UartPacket_t xTxPacket;			// paquete de transmisión
-	TimerTimeout_t xTimerTimeout;	// manejador de los timers
-	Queue_t xQueue;					// manejador de las colas
-	uint8_t ucTxCounter;			// contador de los datos a transmitir
-	MemoryPool_t xMemoryPool;		// datos de la libreriá QMpool
-} UartInstance_t;
+	TaskFunction_t xCallback;
+	UBaseType_t uxPriority;
+	TaskHandle_t xTaskHandle;
+} ActiveObjectConf_t;
 
 /*==================[external data declaration]==============================*/
 
+ActiveObjectConf_t xActiveObject[ MAX_ACTIVE_OBJECTS_NUMBER ];
+
 /*==================[external functions declaration]=========================*/
 
-bool_t bUartDriverInit( UartInstance_t *xUartInstance );
-void vUartDriverProcessPacket( UartInstance_t *pxUartInstance );
+UartPacket_t vActiveObjectEventDispatcher( UartDriverEvent_t *pxUartDriverEvent );
+bool_t bActiveObjectCreate( ActiveObjectConf_t *xActiveObjectConf );
+void vActiveObjectDelete( ActiveObjectConf_t *pxActiveObjectConf );
 
 /*==================[cplusplus]==============================================*/
 
@@ -126,4 +99,4 @@ void vUartDriverProcessPacket( UartInstance_t *pxUartInstance );
 /** @} doxygen end group definition */
 /*==================[end of file]============================================*/
 
-#endif /* #ifndef _UARTDRIVER_H_ */
+#endif /* #ifndef _ACTIVEOBJECT_H_ */
