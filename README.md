@@ -61,11 +61,11 @@ Capa de aplicación(C3):
 - [x] R_C3-5
 - [x] R_C3-6
 - [x] R_C3-7
-- [ ] R_C3-8
+- [x] R_C3-8
 
 Opcionales:
 - [ ] R_OP-1
 
 # NOTAS
 1. ~~La función `uartCallbackSet()` de la SAPI no funciona correctamente y no envía los parámetros de callback a la función de callback. Para probar que el sistema funcione correctamente los parámetros de la estructura `UartInstance_t`son declarados como globales en uartDriver.h y utilizados en las demás librerías con el prefijo `extern`.~~ Problema corregido
-2. Para la parte 2 del TP se escribieron 2 posibles implementaciones, una se ecuentra en la rama "master" y la otra en la rama "develop".
+2. Para la parte 2 del TP se escribieron 2 posibles implementaciones, una se ecuentra en la rama "master" y la otra en la rama "alternative".
