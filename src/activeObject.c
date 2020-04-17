@@ -55,13 +55,14 @@ static void vActiveObjectSend( uint8_t ucActiveObjectNumber, UartDriverEvent_t *
 UartPacket_t vActiveObjectEventDispatcher( UartDriverEvent_t *pxUartDriverEvent )
 {
 	UartPacket_t xPacket;
-
+	/* se crea la cola par recibir los paquetes procesados por los objetos activos */
 	xQueue = xQueueCreate( 4, sizeof( UartPacket_t ) );
 
 	switch ( pxUartDriverEvent->EventType )
 	{
 		case UART_PACKET_LOWERCASE:
 		{
+			/* se envia al objeto activo 0 el evento */
 			vActiveObjectSend( 0, pxUartDriverEvent );
 
 			break;
@@ -69,6 +70,7 @@ UartPacket_t vActiveObjectEventDispatcher( UartDriverEvent_t *pxUartDriverEvent 
 
 		case UART_PACKET_UPPERCASE:
 		{
+			/* se envia al objeto activo 1 el evento */
 			vActiveObjectSend( 1, pxUartDriverEvent );
 
 			break;
@@ -80,11 +82,10 @@ UartPacket_t vActiveObjectEventDispatcher( UartDriverEvent_t *pxUartDriverEvent 
 
 			break;
 	}
-
+	/* se recibe el paquete procesado por el objeto activo y luego se elimina la cola */
 	xQueueReceive( xQueue, &xPacket, portMAX_DELAY );
-
 	vQueueDelete( xQueue );
-
+	/* retorna el paquete procesado */
 	return xPacket;
 }
 
@@ -96,7 +97,7 @@ bool_t bActiveObjectCreate( ActiveObjectConf_t *pxActiveObjectConf )
 	if( pxActiveObjectConf->xQueue == NULL )
 		return FALSE;
 	/* se crea el thread en el que corre el objeto activo y retorna FALSE si no se creo correctamente */
-	xStatus = xTaskCreate( vThread, "Active Object", configMINIMAL_STACK_SIZE * 2, ( void * )pxActiveObjectConf, pxActiveObjectConf->uxPriority, pxActiveObjectConf->TaskHandle_t );
+	xStatus = xTaskCreate( vThread, "Active Object", configMINIMAL_STACK_SIZE * 2, ( void * )pxActiveObjectConf, pxActiveObjectConf->uxPriority, pxActiveObjectConf->xTask );
 	if( !xStatus == pdPASS  )
 		return FALSE;
 	/* retorna TRUE si se crearon correctamente la cola y el thread */
@@ -108,7 +109,7 @@ void vActiveObjectDelete( ActiveObjectConf_t *pxActiveObjectConf )
 	/* se elimina la cola de recepción de paquetes del objeto activo */
 	vQueueDelete( pxActiveObjectConf->xQueue );
 	/* se elimina el thread del objeto activo */
-	vTaskDelete( pxActiveObjectConf->TaskHandle_t );
+	vTaskDelete( pxActiveObjectConf->xTask );
 }
 
 /*==================[internal functions definition]==========================*/

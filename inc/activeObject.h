@@ -77,7 +77,7 @@ typedef struct
 	QueueHandle_t xQueue;
 	TaskFunction_t xCallback;
 	UBaseType_t uxPriority;
-	TaskHandle_t xTaskHandle;
+	TaskHandle_t xTask;
 } ActiveObjectConf_t;
 
 /*==================[external data declaration]==============================*/
