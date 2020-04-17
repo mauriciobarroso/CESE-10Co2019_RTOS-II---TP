@@ -41,7 +41,9 @@
 
 /*==================[internal data declaration]==============================*/
 
-QueueHandle_t xQueue;
+static QueueHandle_t xQueue;
+static uint8_t ucActiveObjectNumber = 0;
+static ActiveObject_t xActiveObject[ MAX_ACTIVE_OBJECTS_NUMBER ];
 
 /*==================[external data declaration]==============================*/
 
@@ -52,36 +54,34 @@ static void vActiveObjectSend( uint8_t ucActiveObjectNumber, UartDriverEvent_t *
 
 /*==================[external functions definition]=========================*/
 
+bool_t bActiveObjectRegister( eEventType_t eEventType, ActiveObjectConf_t *pxActiveObjectConf )
+{
+	if( ucActiveObjectNumber >= MAX_ACTIVE_OBJECTS_NUMBER )
+		return FALSE;
+
+	xActiveObject[ ucActiveObjectNumber ].eEventType = eEventType;
+	xActiveObject[ ucActiveObjectNumber ].xActiveObjectConf.bAlive = 0;
+	xActiveObject[ ucActiveObjectNumber ].xActiveObjectConf.uxPriority = pxActiveObjectConf->uxPriority;
+	xActiveObject[ ucActiveObjectNumber ].xActiveObjectConf.xCallback = pxActiveObjectConf->xCallback;
+
+	ucActiveObjectNumber++;
+
+	return TRUE;
+}
+
 UartPacket_t vActiveObjectEventDispatcher( UartDriverEvent_t *pxUartDriverEvent )
 {
 	UartPacket_t xPacket;
 	/* se crea la cola par recibir los paquetes procesados por los objetos activos */
 	xQueue = xQueueCreate( 4, sizeof( UartPacket_t ) );
 
-	switch ( pxUartDriverEvent->EventType )
+	/**/
+	for( uint8_t i = 0; i < MAX_ACTIVE_OBJECTS_NUMBER; i++ )
 	{
-		case UART_PACKET_LOWERCASE:
-		{
-			/* se envia al objeto activo 0 el evento */
-			vActiveObjectSend( 0, pxUartDriverEvent );
-
-			break;
-		}
-
-		case UART_PACKET_UPPERCASE:
-		{
-			/* se envia al objeto activo 1 el evento */
-			vActiveObjectSend( 1, pxUartDriverEvent );
-
-			break;
-		}
-
-		default:
-			vOperationError( &pxUartDriverEvent->xPacket );
-			xQueueSend( xQueue, ( void * )&pxUartDriverEvent->xPacket, 0 );
-
-			break;
+		if( xActiveObject[ i ].eEventType == pxUartDriverEvent->EventType )
+			vActiveObjectSend( i, pxUartDriverEvent );
 	}
+
 	/* se recibe el paquete procesado por el objeto activo y luego se elimina la cola */
 	xQueueReceive( xQueue, &xPacket, portMAX_DELAY );
 	vQueueDelete( xQueue );
@@ -141,13 +141,13 @@ static void vThread( void *pvParameters )
 static void vActiveObjectSend( uint8_t ucActiveObjectNumber, UartDriverEvent_t *pxUartDriverEvent )
 {
 	/* se comprueba si el objeto activo ya fue creado */
-	if( !xActiveObject[ ucActiveObjectNumber ].bAlive )
+	if( !xActiveObject[ ucActiveObjectNumber ].xActiveObjectConf.bAlive )
 	{
 		/* se comprueba que el objeto activo se creo correctamente y se envia el paquete a procesar */
-		if( bActiveObjectCreate( &xActiveObject[ ucActiveObjectNumber ] ) )
+		if( bActiveObjectCreate( &xActiveObject[ ucActiveObjectNumber ].xActiveObjectConf ) )
 		{
-			xActiveObject[ ucActiveObjectNumber ].bAlive = 1;
-			xQueueSend( xActiveObject[ ucActiveObjectNumber ].xQueue, ( void * )pxUartDriverEvent, 0 );
+			xActiveObject[ ucActiveObjectNumber ].xActiveObjectConf.bAlive = 1;
+			xQueueSend( xActiveObject[ ucActiveObjectNumber ].xActiveObjectConf.xQueue, ( void * )pxUartDriverEvent, 0 );
 		}
 		/* si no se pudo crear el objeto activo entonces se devuelve un mensaje de error */
 		else
@@ -158,7 +158,7 @@ static void vActiveObjectSend( uint8_t ucActiveObjectNumber, UartDriverEvent_t *
 	}
 	/* si el objeto activo ya fue creado se envia el paquete a procesar */
 	else
-		xQueueSend( xActiveObject[ ucActiveObjectNumber ].xQueue, ( void * )pxUartDriverEvent, 0 );
+		xQueueSend( xActiveObject[ ucActiveObjectNumber ].xActiveObjectConf.xQueue, ( void * )pxUartDriverEvent, 0 );
 }
 
 /*==================[end of file]============================================*/
