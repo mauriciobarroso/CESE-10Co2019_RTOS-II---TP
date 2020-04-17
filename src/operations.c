@@ -49,28 +49,34 @@
 
 /*==================[external functions definition]=========================*/
 
-void vLowercaseConvert( MessageData_t *pxMessage )
+void vOperationLowercase( void *pvParameters )
 {
-	for( uint8_t ucIndex = 1; ucIndex < pxMessage->ucLength; ucIndex++ )
+	UartPacket_t *pxPacket = ( UartPacket_t * )pvParameters;
+
+	for( uint8_t ucIndex = 1; ucIndex < pxPacket->ucLength; ucIndex++ )
 	{
-		if( pxMessage->pucBlock[ ucIndex ] <= 'Z' )
-			pxMessage->pucBlock[ ucIndex ] += CONVERSION_FACTOR;
+		if( pxPacket->pucBlock[ ucIndex ] <= 'Z' )
+			pxPacket->pucBlock[ ucIndex ] += CONVERSION_FACTOR;
 	}
 }
 
-void vUppercaseConvert( MessageData_t *pxMessage )
+void vOperationUppercase( void *pvParameters )
 {
-	for( uint8_t ucIndex = 1; ucIndex <= pxMessage->ucLength; ucIndex++ )
+	UartPacket_t *pxPacket = ( UartPacket_t * )pvParameters;
+
+	for( uint8_t ucIndex = 1; ucIndex <= pxPacket->ucLength; ucIndex++ )
 	{
-		if( pxMessage->pucBlock[ ucIndex ] >= 'a' )
-			pxMessage->pucBlock[ ucIndex ] -= CONVERSION_FACTOR;
+		if( pxPacket->pucBlock[ ucIndex ] >= 'a' )
+			pxPacket->pucBlock[ ucIndex ] -= CONVERSION_FACTOR;
 	}
 }
 
-void vOperationError( MessageData_t *pxMessage)
+void vOperationError( void *pvParameters )
 {
-	strcpy( pxMessage->pucBlock, "ERROR" );
-	pxMessage->ucLength = 5;
+	UartPacket_t *pxPacket = ( UartPacket_t * )pvParameters;
+
+	strcpy( pxPacket->pucBlock, "ERROR" );
+	pxPacket->ucLength = 5;
 }
 
 /*==================[internal functions definition]==========================*/
