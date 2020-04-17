@@ -52,6 +52,9 @@
 
 UartInstance_t xUartInstance;
 
+ActiveObjectConf_t xActiveObjectLowercase;
+ActiveObjectConf_t xActiveObjectUppercase;
+
 /*==================[internal functions declaration]=========================*/
 
 /*==================[external functions definition]=========================*/
@@ -60,6 +63,16 @@ int main(void)
 {
    /* se inicializa la EDU-CIAA */
    boardConfig();
+
+   /**/
+   xActiveObject[ 0 ].bAlive = 0;
+   xActiveObject[ 0 ].xCallback = vOperationLowercase;
+   xActiveObject[ 0 ].uxPriority = tskIDLE_PRIORITY + 3;
+
+   xActiveObject[ 1 ].bAlive = 0;
+   xActiveObject[ 1 ].xCallback = vOperationUppercase;
+   xActiveObject[ 1 ].uxPriority = tskIDLE_PRIORITY + 3;
+
    /* se definen los parámetros de la UART */
    xUartInstance.xUartConfig.xName = UART_USB;
    xUartInstance.xUartConfig.ulBaudRate = 115200;
