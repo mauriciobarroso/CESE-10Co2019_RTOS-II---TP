@@ -71,6 +71,20 @@ void vOperationUppercase( void *pvParameters )
 	}
 }
 
+void vOperationUpperLowercase( void *pvParameters )
+{
+	UartPacket_t *pxPacket = ( UartPacket_t * )pvParameters;
+
+	for( uint8_t ucIndex = 1; ucIndex <= pxPacket->ucLength; ucIndex++ )
+	{
+		if( pxPacket->pucBlock[ ucIndex ] >= 'a' && ucIndex % 2 )
+			pxPacket->pucBlock[ ucIndex ] -= CONVERSION_FACTOR;
+		else if( pxPacket->pucBlock[ ucIndex ] <= 'Z' && !( ucIndex % 2 ))
+			pxPacket->pucBlock[ ucIndex ] += CONVERSION_FACTOR;
+
+	}
+}
+
 void vOperationError( void *pvParameters )
 {
 	UartPacket_t *pxPacket = ( UartPacket_t * )pvParameters;
