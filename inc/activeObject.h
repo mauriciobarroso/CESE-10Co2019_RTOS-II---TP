@@ -80,12 +80,17 @@ typedef struct
 	TaskHandle_t xTask;
 } ActiveObjectConf_t;
 
-/*==================[external data declaration]==============================*/
+typedef struct
+{
+	eEventType_t eEventType;
+	ActiveObjectConf_t xActiveObjectConf;
+} ActiveObject_t;
 
-ActiveObjectConf_t xActiveObject[ MAX_ACTIVE_OBJECTS_NUMBER ];
+/*==================[external data declaration]==============================*/
 
 /*==================[external functions declaration]=========================*/
 
+bool_t bActiveObjectRegister( eEventType_t eEventType, ActiveObjectConf_t *pxActiveObjectConf );
 UartPacket_t vActiveObjectEventDispatcher( UartDriverEvent_t *pxUartDriverEvent );
 bool_t bActiveObjectCreate( ActiveObjectConf_t *xActiveObjectConf );
 void vActiveObjectDelete( ActiveObjectConf_t *pxActiveObjectConf );
