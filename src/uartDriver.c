@@ -111,7 +111,11 @@ void vUartDriverProcessPacket( UartInstance_t *pxUartInstance )
 				case 'M':
 					pxUartDriverEvent.EventType = UART_PACKET_UPPERCASE;
 					break;
+				case 'A':
+					pxUartDriverEvent.EventType = UART_PACKET_UPPERLOWERCASE;
+					break;
 				default:
+					pxUartDriverEvent.EventType = UART_PACKET_ERROR;
 					break;
 			}
 
