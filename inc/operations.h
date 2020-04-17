@@ -59,6 +59,7 @@ extern "C" {
 
 void vOperationLowercase( void *pvParameters );
 void vOperationUppercase( void *pvParameters );
+void vOperationUpperLowercase( void *pvParameters );
 void vOperationError( void *pvParameters );
 
 /*==================[cplusplus]==============================================*/
