@@ -55,14 +55,17 @@ extern "C" {
 /*==================[macros]=================================================*/
 
 #define LENGTH_QUEUE_AO				10
-#define MAX_ACTIVE_OBJECTS_NUMBER	2
+#define MAX_ACTIVE_OBJECTS_NUMBER	5
 
 /*==================[typedef]================================================*/
 
 typedef enum
 {
+	UNKNOW,
 	UART_PACKET_LOWERCASE,
 	UART_PACKET_UPPERCASE,
+	UART_PACKET_UPPERLOWERCASE,
+	UART_PACKET_ERROR
 } eEventType_t;
 
 typedef struct
