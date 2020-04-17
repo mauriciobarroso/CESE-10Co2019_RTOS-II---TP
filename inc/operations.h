@@ -40,9 +40,6 @@
 #include "string.h"
 
 #include "uartDriver.h"
-#include "modulos.h"
-
-void vEventManager_Op ( Evento_t * );
 
 /*==================[cplusplus]==============================================*/
 

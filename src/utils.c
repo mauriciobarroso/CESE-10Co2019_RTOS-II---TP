@@ -126,11 +126,8 @@ bool_t bCheckCrc( UartPacket_t *pxPacket )
 	if( ucCrc1 != ucCrc2 )
 		return FALSE;
 
-<<<<<<< HEAD
-=======
 	pxPacket->ucLength -= 2;
 
->>>>>>> develop
 	return TRUE;
 }
 

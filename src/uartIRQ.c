@@ -64,12 +64,7 @@ void vRxTimeOutHandler( TimerHandle_t xTimer )
 			/* se verifica CRC */
 			if( bCheckCrc( &pxUartInstance->xRxPacket ) )
 			{
-<<<<<<< HEAD
-				pxUartInstance->xRxMessage.ucLength -= 2;
-				xQueueSend( pxUartInstance->xQueue.xRx, ( void * )&pxUartInstance->xRxMessage, portMAX_DELAY );
-=======
 				xQueueSend( pxUartInstance->xQueue.xRx, ( void * )&pxUartInstance->xRxPacket, portMAX_DELAY );
->>>>>>> develop
 				/* se pide otro bloque de memoria para el proximo mensaje a recibir */
 				pxUartInstance->xRxPacket.pucBlock = ( char * )QMPool_get( &pxUartInstance->xMemoryPool.xTxPool, 0 );
 				/* se verifica si se obtuvo un bloque de memoria válido */

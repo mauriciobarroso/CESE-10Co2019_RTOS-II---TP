@@ -34,8 +34,6 @@
 /*==================[inclusions]============================================*/
 
 #include "operations.h"
-#include "eventos.h"
-#include "mM_module.h"
 
 /*==================[macros]=================================================*/
 
@@ -51,61 +49,12 @@
 
 /*==================[external functions definition]=========================*/
 
-<<<<<<< HEAD
-void vEventManager_Op ( Evento_t *evn )
-{
-    switch( evn->signal )
-    {
-		case SIG_INICIAR:
-			//Ok!!
-			break;
-		case SIG_OK_CONVERSION_m:
-			gpioToggle( LED1 );
-			vTaskDelete( vTaskModulo_m_Handle );
-			break;
-		case SIG_OK_CONVERSION_M:
-			gpioToggle( LED2 );
-			vTaskDelete( vTaskModulo_M_Handle );
-			break;
-		default:
-			//Ups!!
-			break;
-    }
-}
-
-
-
-void vOperationError( MessageData_t *pxMessage)
-{
-	strcpy( pxMessage->pucBlock, "ERROR" );
-	pxMessage->ucLength = sizeof( "ERROR" );
-}
-=======
 void vOperationLowercase( void *pvParameters )
 {
 	UartPacket_t *pxPacket = ( UartPacket_t * )pvParameters;
->>>>>>> develop
 
 	for( uint8_t ucIndex = 1; ucIndex < pxPacket->ucLength; ucIndex++ )
 	{
-<<<<<<< HEAD
-		case 'm':
-			//vLowercaseConvert( pxMessage );
-			xTaskCreate( vTaskModulo_m, "vTaskModulo_m", configMINIMAL_STACK_SIZE * 2, NULL, tskIDLE_PRIORITY + 4, vTaskModulo_m_Handle );
-	        vPutQueueEvent( Modulo_m, SIG_CONVERTIR_LOWERCASE, pxMessage->pucBlock, pxMessage->ucLength );
-			break;
-		case 'M':
-			//vUppercaseConvert( pxMessage );
-			xTaskCreate( vTaskModulo_M, "vTaskModulo_M", configMINIMAL_STACK_SIZE * 2, NULL, tskIDLE_PRIORITY + 4, vTaskModulo_M_Handle );
-			vPutQueueEvent( Modulo_M, SIG_CONVERTIR_UPPERCASE, pxMessage->pucBlock, pxMessage->ucLength );
-			break;
-		default:
-			vOperationError( pxMessage );
-			break;
-	}
-}
-
-=======
 		if( pxPacket->pucBlock[ ucIndex ] <= 'Z' )
 			pxPacket->pucBlock[ ucIndex ] += CONVERSION_FACTOR;
 	}
@@ -130,7 +79,6 @@ void vOperationError( void *pvParameters )
 	pxPacket->ucLength = 5;
 }
 
->>>>>>> develop
 /*==================[internal functions definition]==========================*/
 
 /*==================[end of file]============================================*/

@@ -93,7 +93,7 @@ bool_t bActiveObjectCreate( ActiveObjectConf_t *pxActiveObjectConf )
 	BaseType_t xStatus;
 	/* se crea la cola de recepción para el paquede del objeto activo  y retorna FALSE si no se creo correctamente*/
 	pxActiveObjectConf->xQueue = xQueueCreate( LENGTH_QUEUE_AO, sizeof( ActiveObjectConf_t ) );
-	if( pxActiveObjectConf->xQueue )
+	if( pxActiveObjectConf->xQueue == NULL )
 		return FALSE;
 	/* se crea el thread en el que corre el objeto activo y retorna FALSE si no se creo correctamente */
 	xStatus = xTaskCreate( vThread, "Active Object", configMINIMAL_STACK_SIZE * 2, ( void * )pxActiveObjectConf, pxActiveObjectConf->uxPriority, pxActiveObjectConf->TaskHandle_t );
