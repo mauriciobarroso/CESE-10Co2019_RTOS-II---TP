@@ -1,14 +1,26 @@
 /*
- * mM_module.h
+ * activeObject.h
  *
  *  Created on: Apr 9, 2020
  *      Author: pablo
  */
 
-#ifndef _MM_AO_H_
-#define _MM_AO_H_
+#ifndef _ACTIVEOBJECT_H_
+#define _ACTIVEOBJECT_H_
+
+/*==================[inclusions]=============================================*/
 
 #include "uartDriver.h"
+
+/*==================[cplusplus]==============================================*/
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/*==================[macros]=================================================*/
+
+/*==================[typedef]================================================*/
 
 typedef struct ActiveObject_t ActiveObject_t;
 typedef struct Evento_t Evento_t;
@@ -44,6 +56,8 @@ typedef enum
 	SIG_OK_CONVERSION_M       ,
 } Signal_t;
 
+/*==================[external data declaration]==============================*/
+
 //Aqui debo declarar como extern todos los Active Objects que use
 extern ActiveObject_t * ActiveObject_m;
 extern ActiveObject_t * ActiveObject_M;
@@ -51,6 +65,8 @@ extern ActiveObject_t * Modulo_Op;
 
 //El Queue de los eventos:
 extern xQueueHandle queueEvents;
+
+/*==================[external functions declaration]=========================*/
 
 //Funciones Específicas de cada AO
 
@@ -77,4 +93,11 @@ void vPutQueueEvent     ( ActiveObject_t *, Signal_t, char *, int );
 void vDeleteActiveObject( ActiveObject_t *);
 
 
-#endif /* _MM_AO_H_ */
+#ifdef __cplusplus
+}
+#endif
+
+/** @} doxygen end group definition */
+/*==================[end of file]============================================*/
+
+#endif /* #ifndef _ACTIVEOBJECT_H_ */

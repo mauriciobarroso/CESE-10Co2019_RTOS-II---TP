@@ -1,23 +1,36 @@
 /*
- * mM_module.c
+ * activeObject.c
  *
- *  Created on: Apr 9, 2020
- *      Author: pablo
+ * Created on: Apr 9, 2020
+ * Author: Grupo 3
  *
  */
+
+/*==================[inclusions]============================================*/
 
 #include "activeObject.h"
 #include "sapi.h"
 
-xQueueHandle queueEvents;
+/*==================[macros]=================================================*/
 
-#define 	    		MAX_AO 5
+#define	MAX_AO	5
+
+/*==================[typedef]================================================*/
+
+/*==================[internal data declaration]==============================*/
+
 static ActiveObject_t 	ActiveObjects[MAX_AO];
 static int 		    	lastAO = 0;
+xQueueHandle queueEvents;
+
+/*==================[external data declaration]==============================*/
+
+/*==================[internal functions declaration]=========================*/
 
 static void vLowercaseConvert_mM( char * , int );
 static void vUppercaseConvert_mM( char * , int );
 
+/*==================[external functions definition]=========================*/
 
 bool_t bCreateActiveObject_m( MessageData_t * pxMessage)
 {
@@ -203,6 +216,8 @@ void vPutQueueEvent ( ActiveObject_t * receptor , Signal_t senhal, char * pChar,
     return;
 }
 
+/*==================[internal functions definition]==========================*/
+
 static void vLowercaseConvert_mM( char *pMessage, int length )
 {
 	for( uint8_t ucIndex = 1; ucIndex < length; ucIndex++ )
@@ -221,8 +236,4 @@ static void vUppercaseConvert_mM( char *pMessage, int length  )
 	}
 }
 
-
-
-
-
-
+/*==================[end of file]============================================*/
