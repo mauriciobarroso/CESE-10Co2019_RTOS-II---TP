@@ -28,10 +28,10 @@
 
 UartInstance_t xUartInstance;
 
-ActiveObjectConf_t xActiveObjectLowercase;
-ActiveObjectConf_t xActiveObjectUppercase;
-ActiveObjectConf_t xActiveObjectUpperLowercase;
-ActiveObjectConf_t xActiveObjectError;
+ActiveObject_t xActiveObjectLowercase;
+ActiveObject_t xActiveObjectUppercase;
+ActiveObject_t xActiveObjectUpperLowercase;
+ActiveObject_t xActiveObjectError;
 
 /*==================[internal functions declaration]=========================*/
 
@@ -43,25 +43,29 @@ int main(void)
    boardConfig();
 
    /* se crea registra un objeto activo asociado con un evento y un callback para minusculizar */
-   xActiveObjectLowercase.xCallback = vOperationLowercase;
-   xActiveObjectLowercase.uxPriority = tskIDLE_PRIORITY + 3;
-   bActiveObjectRegister( UART_PACKET_LOWERCASE, &xActiveObjectLowercase );
+   xActiveObjectLowercase.xActiveObjectConf.xCallback = vOperationLowercase;
+   xActiveObjectLowercase.xActiveObjectConf.uxPriority = tskIDLE_PRIORITY + 3;
+   xActiveObjectLowercase.eEventType = UART_PACKET_LOWERCASE;
+   bActiveObjectRegister( &xActiveObjectLowercase.xActiveObjectConf, xActiveObjectLowercase.eEventType );
 
    /* se crea registra un objeto activo asociado con un evento y un callback para mayusculizar */
-   xActiveObjectUppercase.xCallback = vOperationUppercase;
-   xActiveObjectUppercase.uxPriority = tskIDLE_PRIORITY + 3;
-   bActiveObjectRegister( UART_PACKET_UPPERCASE, &xActiveObjectUppercase );
+   xActiveObjectUppercase.xActiveObjectConf.xCallback = vOperationUppercase;
+   xActiveObjectUppercase.xActiveObjectConf.uxPriority = tskIDLE_PRIORITY + 3;
+   xActiveObjectUppercase.eEventType = UART_PACKET_UPPERCASE;
+   bActiveObjectRegister( &xActiveObjectUppercase.xActiveObjectConf, xActiveObjectUppercase.eEventType );
 
    /* se crea registra un objeto activo asociado con un evento y un callback para mayusculizar/minusculizar
     * de manera intercalada */
-   xActiveObjectUpperLowercase.xCallback = vOperationUpperLowercase;
-   xActiveObjectUpperLowercase.uxPriority = tskIDLE_PRIORITY + 3;
-   bActiveObjectRegister( UART_PACKET_UPPERLOWERCASE, &xActiveObjectUpperLowercase );
+   //xActiveObjectUpperLowercase.xActiveObjectConf.xCallback = vOperationUpperLowercase;
+   //xActiveObjectUpperLowercase.xActiveObjectConf.uxPriority = tskIDLE_PRIORITY + 3;
+   //xActiveObjectUpperLowercase.eEventType = UART_PACKET_UPPERLOWERCASE;
+   //bActiveObjectRegister( &xActiveObjectUpperLowercase.xActiveObjectConf, xActiveObjectUpperLowercase.eEventType );
 
    /* se crea registra un objeto activo asociado con un evento y un callback para manejar eventos no válidos */
-   xActiveObjectError.xCallback = vOperationError;
-   xActiveObjectError.uxPriority = tskIDLE_PRIORITY + 3;
-   bActiveObjectRegister( UART_PACKET_ERROR, &xActiveObjectError );
+   ////xActiveObjectError.xActiveObjectConf.xCallback = vOperationError;
+   //xActiveObjectError.xActiveObjectConf.uxPriority = tskIDLE_PRIORITY + 3;
+   //xActiveObjectError.eEventType = UART_PACKET_ERROR;
+   //bActiveObjectRegister( &xActiveObjectError.xActiveObjectConf, xActiveObjectError.eEventType );
 
    /* se definen los parámetros de la UART */
    xUartInstance.xUartConfig.xName = UART_USB;

@@ -1,9 +1,11 @@
 /*
  * activeObject.h
  *
- *  Created on: Apr 9, 2020
- *      Author: pablo
+ * Created on: Apr 9, 2020
+ * Author: Grupo 3
+ *
  */
+
 #ifndef _ACTIVEOBJECT_H_
 #define _ACTIVEOBJECT_H_
 
@@ -18,6 +20,7 @@
 
 #include "uartDriver.h"
 #include "operations.h"
+#include "events.h"
 
 /*==================[cplusplus]==============================================*/
 
@@ -27,25 +30,10 @@ extern "C" {
 
 /*==================[macros]=================================================*/
 
-#define LENGTH_QUEUE_AO				10
 #define MAX_ACTIVE_OBJECTS_NUMBER	5
+#define LENGTH_QUEUE_AO				10
 
 /*==================[typedef]================================================*/
-
-typedef enum
-{
-	UNKNOW,
-	UART_PACKET_LOWERCASE,
-	UART_PACKET_UPPERCASE,
-	UART_PACKET_UPPERLOWERCASE,
-	UART_PACKET_ERROR
-} eEventType_t;
-
-typedef struct
-{
-	eEventType_t EventType;
-	UartPacket_t xPacket;
-} UartDriverEvent_t;
 
 typedef struct
 {
@@ -66,9 +54,35 @@ typedef struct
 
 /*==================[external functions declaration]=========================*/
 
-bool_t bActiveObjectRegister( eEventType_t eEventType, ActiveObjectConf_t *pxActiveObjectConf );
-UartPacket_t vActiveObjectEventDispatcher( UartDriverEvent_t *pxUartDriverEvent );
-bool_t bActiveObjectCreate( ActiveObjectConf_t *xActiveObjectConf );
+/**
+ * @brief Function to register AOs in a AOs buffer
+ *
+ * @param pxActiveObjectConf[in] pointer to AO configuration
+ * @param EventType[in] Event type of AO
+ *
+ * @return
+ * 		- TRUE Successful
+ * 		- FALSE Number of created AOs out of range
+ */
+bool_t bActiveObjectRegister( ActiveObjectConf_t *pxActiveObjectConf, eEventType_t EventType );
+
+/**
+ * @brief Function to create AO (thread and queue)
+ *
+ * @param pxActiveObjectConf[in] pointer to AO configuration
+ *
+ * @return
+ * 		- TRUE Successful
+ * 		- FALSE Fail to create AO (thread or queue)
+ */
+bool_t bActiveObjectCreate( ActiveObjectConf_t *pxActiveObjectConf );
+
+/**
+ * @brief Function to delete AO (thread and queue)
+ *
+ * @param pxActiveObjectConf[in] pointer to AO configuration
+ *
+ */
 void vActiveObjectDelete( ActiveObjectConf_t *pxActiveObjectConf );
 
 /*==================[cplusplus]==============================================*/

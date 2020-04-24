@@ -20,6 +20,7 @@
 #include "sapi.h"
 
 #include "qmpool.h"
+#include "events.h"
 
 /*==================[cplusplus]==============================================*/
 
@@ -77,6 +78,13 @@ typedef struct
 	uint8_t ucTxCounter;			// contador de los datos a transmitir
 	MemoryPool_t xMemoryPool;		// datos de la libreriá QMpool
 } UartInstance_t;
+
+typedef struct
+{
+	eEventType_t EventType;
+	UartPacket_t xPacket;
+	QueueHandle_t xReceptionQueue;
+} UartDriverEvent_t;
 
 /*==================[external data declaration]==============================*/
 
