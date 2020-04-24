@@ -143,9 +143,12 @@ static bool_t bEventBuild( UartDriverEvent_t *pxUartDriverEvent )
 		case 'M':
 			pxUartDriverEvent->EventType = UART_PACKET_UPPERCASE;
 			break;
-		/*case 'A':
+		case 'A':
 			pxUartDriverEvent->EventType = UART_PACKET_UPPERLOWERCASE;
-			break;*/
+			break;
+		case 'i':
+			pxUartDriverEvent->EventType = UART_PACKET_INVERT;
+			break;
 		default:
 			return FALSE;
 	}

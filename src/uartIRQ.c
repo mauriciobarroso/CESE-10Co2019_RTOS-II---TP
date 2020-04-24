@@ -145,11 +145,13 @@ static void vTxIsrHandler( void *pvParameters )
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 	UartInstance_t *pxUartInstance = ( UartInstance_t * )pvParameters;
 
+	/* se abre sección crítica */
 	uxSavedInterruptStatus = taskENTER_CRITICAL_FROM_ISR(); // se abre sección crítica
 
 	if( !pxUartInstance->ucTxCounter )
 	{
 		xQueueReceiveFromISR( pxUartInstance->xQueue.xTx, &pxUartInstance->xTxPacket, &xHigherPriorityTaskWoken );
+
 		/* se verifica que el mensaje no sea de error */
 		if( pxUartInstance->xTxPacket.pucBlock[ 0 ] != 'E' )
 		{
@@ -161,7 +163,7 @@ static void vTxIsrHandler( void *pvParameters )
 
 		pxUartInstance->xTxPacket.ucLength += 1;
 	}
-		/* se transmiten todos los bytes del bloque de transmisión */
+	/* se transmiten todos los bytes del bloque de transmisión */
 	if( pxUartInstance->ucTxCounter < pxUartInstance->xTxPacket.ucLength - 1 )
 	{
 		uartTxWrite( pxUartInstance->xUartConfig.xName, pxUartInstance->xTxPacket.pucBlock[ pxUartInstance->ucTxCounter ] );
@@ -174,8 +176,10 @@ static void vTxIsrHandler( void *pvParameters )
 		xTimerStartFromISR( pxUartInstance->xTimerTimeout.xTx, &xHigherPriorityTaskWoken );
 	}
 
+	/* se cierra sección crítica */
 	taskEXIT_CRITICAL_FROM_ISR( uxSavedInterruptStatus );
 
+	/* se solicita cambio de contexto */
 	portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 }
 

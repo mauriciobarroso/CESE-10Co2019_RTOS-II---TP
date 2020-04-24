@@ -31,6 +31,7 @@ UartInstance_t xUartInstance;
 ActiveObject_t xActiveObjectLowercase;
 ActiveObject_t xActiveObjectUppercase;
 ActiveObject_t xActiveObjectUpperLowercase;
+ActiveObject_t xActiveObjectInvert;
 
 /*==================[internal functions declaration]=========================*/
 
@@ -55,10 +56,17 @@ int main( void )
 
    /* se registra un objeto activo asociado con un evento y un callback para mayusculizar/minusculizar
     * de manera intercalada */
-   //xActiveObjectUpperLowercase.xActiveObjectConf.xCallback = vOperationUpperLowercase;
-   //xActiveObjectUpperLowercase.xActiveObjectConf.uxPriority = tskIDLE_PRIORITY + 3;
-   //xActiveObjectUpperLowercase.eEventType = UART_PACKET_UPPERLOWERCASE;
-   //bActiveObjectRegister( &xActiveObjectUpperLowercase.xActiveObjectConf, xActiveObjectUpperLowercase.eEventType );
+   xActiveObjectUpperLowercase.xActiveObjectConf.xCallback = vOperationUpperLowercase;
+   xActiveObjectUpperLowercase.xActiveObjectConf.uxPriority = tskIDLE_PRIORITY + 3;
+   xActiveObjectUpperLowercase.eEventType = UART_PACKET_UPPERLOWERCASE;
+   bActiveObjectRegister( &xActiveObjectUpperLowercase.xActiveObjectConf, xActiveObjectUpperLowercase.eEventType );
+
+   /* se registra un objeto activo asociado con un evento y un callback para mayusculizar/minusculizar
+    * de manera intercalada */
+   xActiveObjectInvert.xActiveObjectConf.xCallback = vOperationInvert;
+   xActiveObjectInvert.xActiveObjectConf.uxPriority = tskIDLE_PRIORITY + 3;
+   xActiveObjectInvert.eEventType = UART_PACKET_INVERT;
+   bActiveObjectRegister( &xActiveObjectInvert.xActiveObjectConf, xActiveObjectInvert.eEventType );
 
    /* se definen los parámetros de la UART */
    xUartInstance.xUartConfig.xName = UART_USB;

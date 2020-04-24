@@ -60,6 +60,20 @@ void vOperationUpperLowercase( void *pvParameters )
 	}
 }
 
+void vOperationInvert( void *pvParameters )
+{
+	UartPacket_t *pxPacket = ( UartPacket_t * )pvParameters;
+
+	char ucStringAux[ pxPacket->ucLength ];
+
+	memcpy( ucStringAux, pxPacket->pucBlock, pxPacket->ucLength );
+
+	for( uint8_t ucIndex = 1; ucIndex <= pxPacket->ucLength; ucIndex++ )
+	{
+		pxPacket->pucBlock[ ucIndex ] = ucStringAux[ pxPacket->ucLength - ucIndex ];
+	}
+}
+
 void vOperationError( void *pvParameters )
 {
 	UartPacket_t *pxPacket = ( UartPacket_t * )pvParameters;
