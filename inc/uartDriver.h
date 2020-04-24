@@ -71,8 +71,8 @@ typedef struct
 typedef struct
 {
 	UartConfig_t xUartConfig;		// datos de configuraciónd de la UART
-	UartPacket_t xRxPacket;
-	UartPacket_t xTxPacket;
+	UartPacket_t xRxPacket;			// paquete de recepción de la UART
+	UartPacket_t xTxPacket;			// paquete de transmisión de la UART
 	TimerTimeout_t xTimerTimeout;	// manejador de los timers
 	Queue_t xQueue;					// manejador de las colas
 	uint8_t ucTxCounter;			// contador de los datos a transmitir
@@ -81,9 +81,9 @@ typedef struct
 
 typedef struct
 {
-	eEventType_t EventType;
-	UartPacket_t xPacket;
-	QueueHandle_t xReceptionQueue;
+	eEventType_t EventType;			// tipo de evento
+	UartPacket_t xPacket;			// paquete del evento
+	QueueHandle_t xReceptionQueue;	// cola de recepción de eventos
 } UartDriverEvent_t;
 
 /*==================[external data declaration]==============================*/
@@ -91,26 +91,21 @@ typedef struct
 /*==================[external functions declaration]=========================*/
 
 /**
- * @brief Function to register AOs in a AOs buffer
+ * @brief Función para inicializar lso parámetros del driver
  *
- * @param pxActiveObjectConf[in] pointer to AO configuration
- * @param EventType[in] Event type of AO
+ * @param pxUartInstance[in] Puntero a la configuración del driver
  *
  * @return
- * 		- TRUE Successful
- * 		- FALSE Number of created AOs out of range
+ * 		- TRUE Éxito
+ * 		- FALSE Fallo al inicializar los parámetros (queue, timers o memory pool)
  */
 bool_t bUartDriverInit( UartInstance_t *pxUartInstance );
 
 /**
- * @brief Function to register AOs in a AOs buffer
+ * @brief Función para procesar los paquetes provenientes de la capa anterior
  *
- * @param pxActiveObjectConf[in] pointer to AO configuration
- * @param EventType[in] Event type of AO
+ * @param pxUartInstance[in] Puntero a la configuración del driver
  *
- * @return
- * 		- TRUE Successful
- * 		- FALSE Number of created AOs out of range
  */
 void vUartDriverProcessPacket( UartInstance_t *pxUartInstance );
 

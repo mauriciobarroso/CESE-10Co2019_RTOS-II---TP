@@ -30,7 +30,7 @@ extern "C" {
 
 /*==================[macros]=================================================*/
 
-#define MAX_ACTIVE_OBJECTS_NUMBER	5	// cantidad máxima de AOs
+#define MAX_ACTIVE_OBJECTS_NUMBER	10	// cantidad máxima de AOs
 #define LENGTH_QUEUE_AO				10	// longitud de la cola del AO
 
 /*==================[typedef]================================================*/
@@ -55,32 +55,32 @@ typedef struct
 /*==================[external functions declaration]=========================*/
 
 /**
- * @brief Function to register AOs in a AOs buffer
+ * @brief Función para registrar AOs en el array de AOs
  *
- * @param pxActiveObjectConf[in] pointer to AO configuration
- * @param EventType[in] Event type of AO
+ * @param pxActiveObjectConf[in] puntero a la configuraciín del AO
+ * @param EventType[in] Tipo de evento para el que se crea el AO
  *
  * @return
- * 		- TRUE Successful
- * 		- FALSE Number of created AOs out of range
+ * 		- TRUE Éxito
+ * 		- FALSE Número de AOs registrados fuera de rango
  */
 bool_t bActiveObjectRegister( ActiveObjectConf_t *pxActiveObjectConf, eEventType_t EventType );
 
 /**
- * @brief Function to create AO (thread and queue)
+ * @brief Función para crear AOs (thread y queue)
  *
- * @param pxActiveObjectConf[in] pointer to AO configuration
+ * @param pxActiveObjectConf[in] puntero a la configuraciín del AO
  *
  * @return
- * 		- TRUE Successful
- * 		- FALSE Fail to create AO (thread or queue)
+ * 		- TRUE Éxito
+ * 		- FALSE Fallo al crear el AO (thread o queue)
  */
 bool_t bActiveObjectCreate( ActiveObjectConf_t *pxActiveObjectConf );
 
 /**
- * @brief Function to delete AO (thread and queue)
+ * @brief Función para eliminar AOs (thread y queue)
  *
- * @param pxActiveObjectConf[in] pointer to AO configuration
+ * @param pxActiveObjectConf[in] puntero a la configuraciín del AO
  *
  */
 void vActiveObjectDelete( ActiveObjectConf_t *pxActiveObjectConf );

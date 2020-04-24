@@ -23,6 +23,7 @@ static QueueHandle_t xAppQueue;
 
 /*==================[external data declaration]==============================*/
 
+/* array de objetos activos registrados */
 extern ActiveObject_t xActiveObject[ MAX_ACTIVE_OBJECTS_NUMBER ];
 
 /*==================[internal functions declaration]=========================*/
@@ -36,20 +37,21 @@ static void vEventDispatcher( UartDriverEvent_t *pxUartDriverEvent );
 
 bool_t bUartDriverInit( UartInstance_t *pxUartInstance )
 {
+	/* se crea la cola de recepción de respuesta de los AOs */
 	xAppQueue = xQueueCreate( 4, sizeof( UartPacket_t ) );
 
-	/* inicialización de variables */
+	/* se inicializan variables */
 	pxUartInstance->ucTxCounter = 0;
 	pxUartInstance->xRxPacket.ucLength = 0;
 	pxUartInstance->xTxPacket.ucLength = 0;
 
-	/* configuración UART */
+	/* se configura la UART */
 	uartConfig( pxUartInstance->xUartConfig.xName, pxUartInstance->xUartConfig.ulBaudRate );
 	if( !bRxInterruptEnable( pxUartInstance ) )
 		return FALSE;
 	uartInterrupt( pxUartInstance->xUartConfig.xName, TRUE );
 
-	/* creación de colas */
+	/* se crean las cola de recepción y transmisión de la UART */
 	pxUartInstance->xQueue.xRx = xQueueCreate( POOL_TOTAL_BLOCKS, sizeof( UartPacket_t ) );
 	if( pxUartInstance->xQueue.xRx == NULL)
 		return FALSE;
@@ -57,7 +59,7 @@ bool_t bUartDriverInit( UartInstance_t *pxUartInstance )
 	if( pxUartInstance->xQueue.xTx == NULL)
 		return FALSE;
 
-	/* creación de timers */
+	/* se crean los timers de recepción y transmisión de la UART */
 	pxUartInstance->xTimerTimeout.xRx = xTimerCreate( "Rx Timeout", PROTOCOL_TIMEOUT, pdFALSE, ( void * )pxUartInstance, vRxTimeOutHandler );
 	if( pxUartInstance->xTimerTimeout.xRx == NULL)
 		return FALSE;
@@ -72,6 +74,7 @@ bool_t bUartDriverInit( UartInstance_t *pxUartInstance )
 	QMPool_init( &pxUartInstance->xMemoryPool.xTxPool, ( void * )pxUartInstance->xMemoryPool.pucPoolStorage, POOL_SIZE * sizeof( char ), BLOCK_SIZE );
 	pxUartInstance->xRxPacket.pucBlock = ( char * )QMPool_get( &pxUartInstance->xMemoryPool.xTxPool, 0 );
 
+	/* se retorna TRUE si todas las operaciones anteriores fueron exitosas */
 	return TRUE;
 }
 
