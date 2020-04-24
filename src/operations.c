@@ -9,7 +9,6 @@
 /*==================[inclusions]============================================*/
 
 #include "operations.h"
-#include "activeObject.h"
 
 /*==================[macros]=================================================*/
 
@@ -23,60 +22,51 @@
 
 /*==================[internal functions declaration]=========================*/
 
-static void vLowercaseConvert( MessageData_t *pxMessage );
-static void vUppercaseConvert( MessageData_t *pxMessage );
-
 /*==================[external functions definition]=========================*/
 
-void vEventManager_Op ( Evento_t *evn )
+void vOperationLowercase( void *pvParameters )
 {
-    switch( evn->signal )
-    {
-		case SIG_INICIAR:
-			//Ok!!
-			break;
-		case SIG_OK_CONVERSION_m:
-			vDeleteActiveObject( ActiveObject_m );
-			gpioToggle( LED2 );
-			break;
-		case SIG_OK_CONVERSION_M:
-			vDeleteActiveObject( ActiveObject_M );
-			gpioToggle( LED2 );
-			break;
-		default:
-			//Ups!!
-			break;
-    }
-}
+	UartPacket_t *pxPacket = ( UartPacket_t * )pvParameters;
 
-
-
-void vOperationError( MessageData_t *pxMessage)
-{
-	strcpy( pxMessage->pucBlock, "ERROR" );
-	pxMessage->ucLength = 5;
-}
-
-void vOperationSelect( MessageData_t *pxMessage )
-{
-	switch( pxMessage->pucBlock[ 0 ] )
+	for( uint8_t ucIndex = 1; ucIndex < pxPacket->ucLength; ucIndex++ )
 	{
-		case 'm':
-			if ( ! bCreateActiveObject_m( pxMessage ) ){
-				vOperationError( pxMessage );
-			}
-			break;
-		case 'M':
-			if ( ! bCreateActiveObject_M( pxMessage ) ){
-				vOperationError( pxMessage );
-			}
-			break;
-		default:
-			vOperationError( pxMessage );
-			break;
+		if( pxPacket->pucBlock[ ucIndex ] <= 'Z' )
+			pxPacket->pucBlock[ ucIndex ] += CONVERSION_FACTOR;
 	}
 }
 
+void vOperationUppercase( void *pvParameters )
+{
+	UartPacket_t *pxPacket = ( UartPacket_t * )pvParameters;
+
+	for( uint8_t ucIndex = 1; ucIndex <= pxPacket->ucLength; ucIndex++ )
+	{
+		if( pxPacket->pucBlock[ ucIndex ] >= 'a' )
+			pxPacket->pucBlock[ ucIndex ] -= CONVERSION_FACTOR;
+	}
+}
+
+void vOperationUpperLowercase( void *pvParameters )
+{
+	UartPacket_t *pxPacket = ( UartPacket_t * )pvParameters;
+
+	for( uint8_t ucIndex = 1; ucIndex <= pxPacket->ucLength; ucIndex++ )
+	{
+		if( pxPacket->pucBlock[ ucIndex ] >= 'a' && ucIndex % 2 )
+			pxPacket->pucBlock[ ucIndex ] -= CONVERSION_FACTOR;
+		else if( pxPacket->pucBlock[ ucIndex ] <= 'Z' && !( ucIndex % 2 ))
+			pxPacket->pucBlock[ ucIndex ] += CONVERSION_FACTOR;
+
+	}
+}
+
+void vOperationError( void *pvParameters )
+{
+	UartPacket_t *pxPacket = ( UartPacket_t * )pvParameters;
+
+	strcpy( pxPacket->pucBlock, "ERROR" );
+	pxPacket->ucLength = 5;
+}
 
 /*==================[internal functions definition]==========================*/
 

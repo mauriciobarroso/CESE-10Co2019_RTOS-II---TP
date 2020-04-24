@@ -36,23 +36,24 @@ extern "C" {
 #define POOL_SIZE			POOL_TOTAL_BLOCKS * BLOCK_SIZE	// tamaño total del pool
 
 /*==================[typedef]================================================*/
-typedef struct
-{
-	char *pucBlock;
-	uint8_t ucLength;
-} MessageData_t;
-
-typedef struct
-{
-	TimerHandle_t xRx;
-	TimerHandle_t xTx;
-} TimerTimeout_t;
 
 typedef struct
 {
 	uartMap_t xName;
 	uint32_t ulBaudRate;
 } UartConfig_t;
+
+typedef struct
+{
+	char *pucBlock;
+	uint8_t ucLength;
+} UartPacket_t;
+
+typedef struct
+{
+	TimerHandle_t xRx;
+	TimerHandle_t xTx;
+} TimerTimeout_t;
 
 typedef struct
 {
@@ -69,8 +70,8 @@ typedef struct
 typedef struct
 {
 	UartConfig_t xUartConfig;		// datos de configuraciónd de la UART
-	MessageData_t xRxMessage;
-	MessageData_t xTxMessage;
+	UartPacket_t xRxPacket;
+	UartPacket_t xTxPacket;
 	TimerTimeout_t xTimerTimeout;	// manejador de los timers
 	Queue_t xQueue;					// manejador de las colas
 	uint8_t ucTxCounter;			// contador de los datos a transmitir

@@ -1,35 +1,10 @@
-/* Copyright 2020, Mauricio Barroso
- * All rights reserved.
+/*
+ * utils.c
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its
- *    contributors may be used to endorse or promote products derived from this
- *    software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Created on: Apr 9, 2020
+ * Author: Grupo 3
  *
  */
-
-/* Date: 19/03/20 */
 
 /*==================[inlcusions]============================================*/
 
@@ -50,16 +25,16 @@ static uint8_t crc8_small_table[16] = {
 
 /*==================[internal functions declaration]=========================*/
 
-static eMessageError_t eMessageErrorType( MessageData_t *pxMessage );
+static eMessageError_t eMessageErrorType( UartPacket_t *pxPacket );
 
 /*==================[external functions definition]=========================*/
 
-void vExtractMessage( MessageData_t *pxMessage )
+void vExtractMessage( UartPacket_t *pxPacket )
 {
-	for( uint8_t i = 0; i <= pxMessage->ucLength - 2; i++ )	// 4 hardcodeado
-		pxMessage->pucBlock[ i ] = pxMessage->pucBlock[ i + 1 ];
+	for( uint8_t i = 0; i <= pxPacket->ucLength - 2; i++ )	// 4 hardcodeado
+		pxPacket->pucBlock[ i ] = pxPacket->pucBlock[ i + 1 ];
 	/* se reduce el largo del string en 3 */
-	pxMessage->ucLength -= 2;
+	pxPacket->ucLength -= 2;
 }
 
 
@@ -114,55 +89,57 @@ uint8_t ucCrcCharToByte( uint8_t ucCrc1, uint8_t ucCrc0)
 	return ucCrc;
 }
 
-bool_t bCheckCrc( MessageData_t *pxMessage )
+bool_t bCheckCrc( UartPacket_t *pxPacket )
 {
 	uint8_t ucCrc1;
 	uint8_t ucCrc2;
 
-	ucCrc1 = crc8_calc( 0, pxMessage->pucBlock, pxMessage->ucLength - 2 );
+	ucCrc1 = crc8_calc( 0, pxPacket->pucBlock, pxPacket->ucLength - 2 );
 
-	ucCrc2 = ucCrcCharToByte( pxMessage->pucBlock[ pxMessage->ucLength - 2 ], pxMessage->pucBlock[ pxMessage->ucLength - 1 ] );
+	ucCrc2 = ucCrcCharToByte( pxPacket->pucBlock[ pxPacket->ucLength - 2 ], pxPacket->pucBlock[ pxPacket->ucLength - 1 ] );
 
 	if( ucCrc1 != ucCrc2 )
 		return FALSE;
 
+	pxPacket->ucLength -= 2;
+
 	return TRUE;
 }
 
-void vAddStartAndEndCharacters( MessageData_t *pxMessage )
+void vAddStartAndEndCharacters( UartPacket_t *pxPacket )
 {
-	for( uint8_t i = pxMessage->ucLength; i != 0; i-- )
-		pxMessage->pucBlock[ i ] = pxMessage->pucBlock[ i - 1 ];
+	for( uint8_t i = pxPacket->ucLength; i != 0; i-- )
+		pxPacket->pucBlock[ i ] = pxPacket->pucBlock[ i - 1 ];
 
-	pxMessage->ucLength += 2;
+	pxPacket->ucLength += 2;
 
-	pxMessage->pucBlock[ 0 ] = '(';
-	pxMessage->pucBlock[ pxMessage->ucLength - 1 ] = ')';
+	pxPacket->pucBlock[ 0 ] = '(';
+	pxPacket->pucBlock[ pxPacket->ucLength - 1 ] = ')';
 }
 
-void vAddCrc( MessageData_t *pxMessage )
+void vAddCrc( UartPacket_t *pxPacket )
 {
-	uint8_t crc = crc8_calc( 0, pxMessage->pucBlock, pxMessage->ucLength );
+	uint8_t crc = crc8_calc( 0, pxPacket->pucBlock, pxPacket->ucLength );
 	uint8_t bCrc[2];
 	vCrcByteToChar( crc, bCrc );
 
-	pxMessage->ucLength += 2;
-	pxMessage->pucBlock[ pxMessage->ucLength - 2 ] = bCrc[1];
-	pxMessage->pucBlock[ pxMessage->ucLength - 1 ] = bCrc[0];
+	pxPacket->ucLength += 2;
+	pxPacket->pucBlock[ pxPacket->ucLength - 2 ] = bCrc[1];
+	pxPacket->pucBlock[ pxPacket->ucLength - 1 ] = bCrc[0];
 }
 
-bool_t bCheckPacket( MessageData_t *pxMessage )
+bool_t bCheckPacket( UartPacket_t *pxPacket )
 {
-	switch( eMessageErrorType( pxMessage ) )
+	switch( eMessageErrorType( pxPacket ) )
 	{
 		case ERROR_1:
-			strcpy( pxMessage->pucBlock, " ERROR_1" );
-			pxMessage->ucLength = 7;
+			strcpy( pxPacket->pucBlock, " ERROR_1" );
+			pxPacket->ucLength = 7;
 			return FALSE;
 
 		case ERROR_2:
-			strcpy( pxMessage->pucBlock, " ERROR_2" );
-			pxMessage->ucLength = 7;
+			strcpy( pxPacket->pucBlock, " ERROR_2" );
+			pxPacket->ucLength = 7;
 			return FALSE;
 
 		default:
@@ -172,15 +149,26 @@ bool_t bCheckPacket( MessageData_t *pxMessage )
 	return TRUE;
 }
 
+bool_t bCheckCharacters( UartPacket_t *pxPacket )
+{
+    for( uint8_t ucIndex = 0; ucIndex < pxPacket->ucLength; ucIndex++ )
+    {
+    	if( !( ( pxPacket->pucBlock[ ucIndex ] >= 'A' && pxPacket->pucBlock[ ucIndex ] <= 'Z' ) || ( pxPacket->pucBlock[ ucIndex ] >= 'a' && pxPacket->pucBlock[ ucIndex ] <= 'z' ) ) )
+    		return FALSE;
+    }
+
+    return TRUE;
+}
+
 /*==================[internal functions definition]==========================*/
 
 
-static eMessageError_t eMessageErrorType( MessageData_t *pxMessage )
+static eMessageError_t eMessageErrorType( UartPacket_t *pxPacket )
 {
-    if ( pxMessage->pucBlock[ 0 ] != '(' )
+    if ( pxPacket->pucBlock[ 0 ] != '(' )
     	return ERROR_1;
 
-    if ( pxMessage->pucBlock[ pxMessage->ucLength - 1 ] != ')' )
+    if ( pxPacket->pucBlock[ pxPacket->ucLength - 1 ] != ')' )
     	return ERROR_2;
 
     return NO_ERROR;

@@ -1,46 +1,19 @@
-
-/* Copyright 2020, Mauricio Barroso
- * All rights reserved.
+/*
+ * main.c
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its
- *    contributors may be used to endorse or promote products derived from this
- *    software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Created on: Apr 9, 2020
+ * Author: Grupo 3
  *
  */
 
-/* Date: 19/03/20 */
-
 /*==================[inclusions]============================================*/
-
-#include "activeObject.h"
 
 #include "FreeRTOS.h"
 #include "FreeRTOSConfig.h"
 #include "task.h"
 #include "sapi.h"
 
+#include "activeObject.h"
 #include "userTasks.h"
 
 #include "operations.h"
@@ -55,9 +28,10 @@
 
 UartInstance_t xUartInstance;
 
-ActiveObject_t * ActiveObject_m;
-ActiveObject_t * ActiveObject_M;
-ActiveObject_t * Modulo_Op;
+ActiveObjectConf_t xActiveObjectLowercase;
+ActiveObjectConf_t xActiveObjectUppercase;
+ActiveObjectConf_t xActiveObjectUpperLowercase;
+ActiveObjectConf_t xActiveObjectError;
 
 /*==================[internal functions declaration]=========================*/
 
@@ -67,35 +41,48 @@ int main(void)
 {
    /* se inicializa la EDU-CIAA */
    boardConfig();
+
+   /* se crea registra un objeto activo asociado con un evento y un callback para minusculizar */
+   xActiveObjectLowercase.xCallback = vOperationLowercase;
+   xActiveObjectLowercase.uxPriority = tskIDLE_PRIORITY + 3;
+   bActiveObjectRegister( UART_PACKET_LOWERCASE, &xActiveObjectLowercase );
+
+   /* se crea registra un objeto activo asociado con un evento y un callback para mayusculizar */
+   xActiveObjectUppercase.xCallback = vOperationUppercase;
+   xActiveObjectUppercase.uxPriority = tskIDLE_PRIORITY + 3;
+   bActiveObjectRegister( UART_PACKET_UPPERCASE, &xActiveObjectUppercase );
+
+   /* se crea registra un objeto activo asociado con un evento y un callback para mayusculizar/minusculizar
+    * de manera intercalada */
+   xActiveObjectUpperLowercase.xCallback = vOperationUpperLowercase;
+   xActiveObjectUpperLowercase.uxPriority = tskIDLE_PRIORITY + 3;
+   bActiveObjectRegister( UART_PACKET_UPPERLOWERCASE, &xActiveObjectUpperLowercase );
+
+   /* se crea registra un objeto activo asociado con un evento y un callback para manejar eventos no válidos */
+   xActiveObjectError.xCallback = vOperationError;
+   xActiveObjectError.uxPriority = tskIDLE_PRIORITY + 3;
+   bActiveObjectRegister( UART_PACKET_ERROR, &xActiveObjectError );
+
    /* se definen los parámetros de la UART */
    xUartInstance.xUartConfig.xName = UART_USB;
    xUartInstance.xUartConfig.ulBaudRate = 115200;
+
    /* se inicializa uartDriver */
    if( !bUartDriverInit( &xUartInstance ) )
    {
+	   /* mantiene encendido el led rojo para indicar error */
 	   gpioWrite( LEDR, ON );
 
 	   for( ;; )
 	   {}
    }
    else
+	   /* mantiene encendido el led verde para indicar exito */
 	   gpioWrite( LEDG, ON );
-
-   //Recibe los eventos para deletear los AO de Mayusculizar y Minusculizar
-   //No es un AO instanciado, solo registro un event Manager para recibir
-   //los eventos de los AO
-   Modulo_Op = xRegistActiveObject( vEventManager_Op );
-
-
-   //cola de eventos general
-   queueEvents = xQueueCreate( 15, sizeof( Evento_t ) );
-   // Creo la tarea Despachadora de eventos
-   xTaskCreate( vTaskEventDispatch, "TaskEventDispatch", configMINIMAL_STACK_SIZE * 5, NULL, tskIDLE_PRIORITY + 3, NULL );
-
 
    /* creación de tareas */
    xTaskCreate( vTickTask, "Tick Task", configMINIMAL_STACK_SIZE * 2, NULL, tskIDLE_PRIORITY + 1, NULL );
-   xTaskCreate( vDriverTask, "Tick Task", configMINIMAL_STACK_SIZE * 2, ( void * )&xUartInstance, tskIDLE_PRIORITY + 2, NULL );
+   xTaskCreate( vDriverTask, "Driver Task", configMINIMAL_STACK_SIZE * 2, ( void * )&xUartInstance, tskIDLE_PRIORITY + 2, NULL );
    /* inicializacion del scheduler */
    vTaskStartScheduler();
 

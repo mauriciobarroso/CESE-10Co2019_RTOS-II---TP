@@ -11,6 +11,7 @@
 #include "uartDriver.h"
 #include "uartIRQ.h"
 #include "operations.h"
+#include "activeObject.h"
 
 /*==================[macros]=================================================*/
 
@@ -22,8 +23,7 @@
 
 /*==================[internal functions declaration]=========================*/
 
-static void vPacketTx( UartInstance_t *pxUartInstance, MessageData_t *pxMessage );
-static bool_t bCheckCharacters( MessageData_t *pxMessage );
+static void vPacketTx( UartInstance_t *pxUartInstance, UartPacket_t *pxPacket );
 
 /*==================[external functions definition]=========================*/
 
@@ -32,20 +32,23 @@ bool_t bUartDriverInit( UartInstance_t *pxUartInstance )
 {
 	/* inicialización de variables */
 	pxUartInstance->ucTxCounter = 0;
-	pxUartInstance->xRxMessage.ucLength = 0;
-	pxUartInstance->xTxMessage.ucLength = 0;
+	pxUartInstance->xRxPacket.ucLength = 0;
+	pxUartInstance->xTxPacket.ucLength = 0;
+
 	/* configuración UART */
 	uartConfig( pxUartInstance->xUartConfig.xName, pxUartInstance->xUartConfig.ulBaudRate );
 	if( !bRxInterruptEnable( pxUartInstance ) )
 		return FALSE;
 	uartInterrupt( pxUartInstance->xUartConfig.xName, TRUE );
+
 	/* creación de colas */
-	pxUartInstance->xQueue.xRx = xQueueCreate( POOL_TOTAL_BLOCKS, sizeof( MessageData_t ) );
+	pxUartInstance->xQueue.xRx = xQueueCreate( POOL_TOTAL_BLOCKS, sizeof( UartPacket_t ) );
 	if( pxUartInstance->xQueue.xRx == NULL)
 		return FALSE;
-	pxUartInstance->xQueue.xTx = xQueueCreate( POOL_TOTAL_BLOCKS, sizeof( MessageData_t ) );
+	pxUartInstance->xQueue.xTx = xQueueCreate( POOL_TOTAL_BLOCKS, sizeof( UartPacket_t ) );
 	if( pxUartInstance->xQueue.xTx == NULL)
 		return FALSE;
+
 	/* creación de timers */
 	pxUartInstance->xTimerTimeout.xRx = xTimerCreate( "Rx Timeout", PROTOCOL_TIMEOUT, pdFALSE, ( void * )pxUartInstance, vRxTimeOutHandler );
 	if( pxUartInstance->xTimerTimeout.xRx == NULL)
@@ -53,12 +56,13 @@ bool_t bUartDriverInit( UartInstance_t *pxUartInstance )
 	pxUartInstance->xTimerTimeout.xTx = xTimerCreate( "Tx Timeout", PROTOCOL_TIMEOUT, pdFALSE, ( void * )pxUartInstance, vTxTimeOutHandler );
 	if( pxUartInstance->xTimerTimeout.xTx == NULL)
 		return FALSE;
+
 	/* memory pool */
 	pxUartInstance->xMemoryPool.pucPoolStorage = ( char * )pvPortMalloc( POOL_SIZE * sizeof( char ) );
 	if( pxUartInstance->xMemoryPool.pucPoolStorage == NULL)
 		return FALSE;
 	QMPool_init( &pxUartInstance->xMemoryPool.xTxPool, ( void * )pxUartInstance->xMemoryPool.pucPoolStorage, POOL_SIZE * sizeof( char ), BLOCK_SIZE );
-	pxUartInstance->xRxMessage.pucBlock = ( char * )QMPool_get( &pxUartInstance->xMemoryPool.xTxPool, 0 );
+	pxUartInstance->xRxPacket.pucBlock = ( char * )QMPool_get( &pxUartInstance->xMemoryPool.xTxPool, 0 );
 
 	return TRUE;
 }
@@ -66,28 +70,55 @@ bool_t bUartDriverInit( UartInstance_t *pxUartInstance )
 
 void vUartDriverProcessPacket( UartInstance_t *pxUartInstance )
 {
-	MessageData_t pxMessage;
-	/* se recibe el puntero del mensaje proveniente de la capa anterior */
-	xQueueReceive( pxUartInstance->xQueue.xRx, &pxMessage, portMAX_DELAY );
-	/* se verifica que el puntero no sea nulo y se ejecuta la operación correspondiente
-	 * si el mensaje es valido o se manda un mensaje de error */
-	if( &pxMessage != NULL )
-	{
-		if( bCheckCharacters( &pxMessage ) )
-			vOperationSelect( &pxMessage );
-		else
-			vOperationError( &pxMessage );
+	UartDriverEvent_t pxUartDriverEvent;
+	UartPacket_t pxPacket;
 
-		vPacketTx( pxUartInstance, &pxMessage );
+	/* se recibe el puntero de la estructura del paquete proveniente de la capa anterior */
+	xQueueReceive( pxUartInstance->xQueue.xRx, &pxPacket, portMAX_DELAY );
+	/* se verifica que el puntero no sea nulo */
+	if( &pxPacket != NULL )
+	{
+		/* se verifica que el paquete solo contenga caracteres alfabeticos */
+		if( bCheckCharacters( &pxPacket ) )
+		{
+			/* se construye el evento con el tipo, bloque de memoria del paquete y la longitud del mismo */
+			switch( pxPacket.pucBlock[ 0 ] )
+			{
+				case 'm':
+					pxUartDriverEvent.EventType = UART_PACKET_LOWERCASE;
+					break;
+				case 'M':
+					pxUartDriverEvent.EventType = UART_PACKET_UPPERCASE;
+					break;
+				case 'A':
+					pxUartDriverEvent.EventType = UART_PACKET_UPPERLOWERCASE;
+					break;
+				default:
+					pxUartDriverEvent.EventType = UART_PACKET_ERROR;
+					break;
+			}
+
+			pxUartDriverEvent.xPacket = pxPacket;
+
+			/* se envia el evento al despachador de eventos y se espera que devuelva el paquete procesado */
+			pxPacket = vActiveObjectEventDispatcher( &pxUartDriverEvent );
+		}
+
+		else
+			/* se escribe un mensaje de error si el paquete no es correcto */
+			vOperationError( &pxPacket );
+
+		/* se envia el paquete hacia la capa 2 */
+		vPacketTx( pxUartInstance, &pxPacket );
 	}
 }
 
 /*==================[internal functions definition]==========================*/
 
-static void vPacketTx( UartInstance_t *pxUartInstance, MessageData_t *pxMessage )
+static void vPacketTx( UartInstance_t *pxUartInstance, UartPacket_t *pxPacket )
 {
 	/* se envia el puntero al mensaje a la capa de separación de frames */
-	xQueueSend( pxUartInstance->xQueue.xTx, ( void * )pxMessage, portMAX_DELAY );
+	xQueueSend( pxUartInstance->xQueue.xTx, ( void * )pxPacket, portMAX_DELAY );
 	/* se abre sección crítica */
 	taskENTER_CRITICAL();
 
@@ -97,17 +128,6 @@ static void vPacketTx( UartInstance_t *pxUartInstance, MessageData_t *pxMessage 
 	uartSetPendingInterrupt( pxUartInstance->xUartConfig.xName );
 	/* se cierra sección crítica */
 	taskEXIT_CRITICAL();
-}
-
-static bool_t bCheckCharacters( MessageData_t *pxMessage )
-{
-    for( uint8_t ucIndex = 0; ucIndex < pxMessage->ucLength; ucIndex++ )
-    {
-    	if( !( ( pxMessage->pucBlock[ ucIndex ] >= 'A' && pxMessage->pucBlock[ ucIndex ] <= 'Z' ) || ( pxMessage->pucBlock[ ucIndex ] >= 'a' && pxMessage->pucBlock[ ucIndex ] <= 'z' ) ) )
-    		return FALSE;
-    }
-
-    return TRUE;
 }
 
 /*==================[end of file]============================================*/

@@ -12,9 +12,8 @@
 /*==================[inclusions]=============================================*/
 
 #include <stdint.h>
-
-#include "activeObject.h"
 #include "string.h"
+
 #include "uartDriver.h"
 
 /*==================[cplusplus]==============================================*/
@@ -25,16 +24,18 @@ extern "C" {
 
 /*==================[macros]=================================================*/
 
+#define CONVERSION_FACTOR	32
+
 /*==================[typedef]================================================*/
 
 /*==================[external data declaration]==============================*/
 
 /*==================[external functions declaration]=========================*/
 
-void vEventManager_Op ( Evento_t * );
-
-void vOperationError( MessageData_t *pxMessage );
-void vOperationSelect( MessageData_t *pxMessage );
+void vOperationLowercase( void *pvParameters );
+void vOperationUppercase( void *pvParameters );
+void vOperationUpperLowercase( void *pvParameters );
+void vOperationError( void *pvParameters );
 
 /*==================[cplusplus]==============================================*/
 

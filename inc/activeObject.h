@@ -4,13 +4,20 @@
  *  Created on: Apr 9, 2020
  *      Author: pablo
  */
-
 #ifndef _ACTIVEOBJECT_H_
 #define _ACTIVEOBJECT_H_
 
 /*==================[inclusions]=============================================*/
 
+#include <stdint.h>
+#include "string.h"
+
+#include "FreeRTOS.h"
+#include "FreeRTOSConfig.h"
+#include "task.h"
+
 #include "uartDriver.h"
+#include "operations.h"
 
 /*==================[cplusplus]==============================================*/
 
@@ -20,78 +27,51 @@ extern "C" {
 
 /*==================[macros]=================================================*/
 
+#define LENGTH_QUEUE_AO				10
+#define MAX_ACTIVE_OBJECTS_NUMBER	5
+
 /*==================[typedef]================================================*/
-
-typedef struct ActiveObject_t ActiveObject_t;
-typedef struct Evento_t Evento_t;
-
-typedef void ( *fsm_ptr ) ( Evento_t * );
-
-typedef struct ActiveObject_t
-{
-    fsm_ptr	 	 manejadorEventos;
-    TaskHandle_t TH;
-    //QueueHandle_t QH
-    int 	     param_aux_1;
-    int 		 param_aux_2;
-} ActiveObject_t;
-
-
-typedef struct Evento_t
-{
-	ActiveObject_t * receptor;
-    int				 signal;
-    char *			 pChar;
-    int			     largo;
-} Evento_t;
 
 typedef enum
 {
-    SIG_INICIAR   			=0,
-	SIG_CONVERTIR_UPPERCASE	  ,
-	SIG_CONVERTIR_LOWERCASE   ,
-	SIG_FINALIZAR			  ,
-	SIG_OK_CONVERSION         ,
-	SIG_OK_CONVERSION_m       ,
-	SIG_OK_CONVERSION_M       ,
-} Signal_t;
+	UNKNOW,
+	UART_PACKET_LOWERCASE,
+	UART_PACKET_UPPERCASE,
+	UART_PACKET_UPPERLOWERCASE,
+	UART_PACKET_ERROR
+} eEventType_t;
+
+typedef struct
+{
+	eEventType_t EventType;
+	UartPacket_t xPacket;
+} UartDriverEvent_t;
+
+typedef struct
+{
+	bool_t bAlive;
+	QueueHandle_t xQueue;
+	TaskFunction_t xCallback;
+	UBaseType_t uxPriority;
+	TaskHandle_t xTask;
+} ActiveObjectConf_t;
+
+typedef struct
+{
+	eEventType_t eEventType;
+	ActiveObjectConf_t xActiveObjectConf;
+} ActiveObject_t;
 
 /*==================[external data declaration]==============================*/
 
-//Aqui debo declarar como extern todos los Active Objects que use
-extern ActiveObject_t * ActiveObject_m;
-extern ActiveObject_t * ActiveObject_M;
-extern ActiveObject_t * Modulo_Op;
-
-//El Queue de los eventos:
-extern xQueueHandle queueEvents;
-
 /*==================[external functions declaration]=========================*/
 
-//Funciones Específicas de cada AO
+bool_t bActiveObjectRegister( eEventType_t eEventType, ActiveObjectConf_t *pxActiveObjectConf );
+UartPacket_t vActiveObjectEventDispatcher( UartDriverEvent_t *pxUartDriverEvent );
+bool_t bActiveObjectCreate( ActiveObjectConf_t *xActiveObjectConf );
+void vActiveObjectDelete( ActiveObjectConf_t *pxActiveObjectConf );
 
-//ActiveObject_m
-bool_t bCreateActiveObject_m( MessageData_t * );
-void vTaskActiveObject_m ( void * );
-void vEventManager_m ( Evento_t * );
-
-//ActiveObject_m
-bool_t bCreateActiveObject_M( MessageData_t * );
-void vTaskActiveObject_M ( void * );
-void vEventManager_M ( Evento_t * );
-
-//Funciones Generales para todos los AO
-
-ActiveObject_t * xRegistActiveObject( fsm_ptr manejadorEventos );
-void			 vUnRegistActiveObject( ActiveObject_t * );
-//void             vInitActiveObjects ( void );
-void vTaskEventDispatch ( void * );
-void vDispatchEvent     ( Evento_t * );
-
-void vPutQueueEvent     ( ActiveObject_t *, Signal_t, char *, int );
-
-void vDeleteActiveObject( ActiveObject_t *);
-
+/*==================[cplusplus]==============================================*/
 
 #ifdef __cplusplus
 }
