@@ -28,7 +28,7 @@ extern ActiveObject_t xActiveObject[ MAX_ACTIVE_OBJECTS_NUMBER ];
 /*==================[internal functions declaration]=========================*/
 
 static void vPacketTx( UartInstance_t *pxUartInstance, UartPacket_t *pxPacket );
-static void vEventBuild( UartDriverEvent_t *pxUartDriverEvent );
+static bool_t bEventBuild( UartDriverEvent_t *pxUartDriverEvent );
 static void vEventDispatcher( UartDriverEvent_t *pxUartDriverEvent );
 
 /*==================[external functions definition]=========================*/
@@ -78,32 +78,37 @@ bool_t bUartDriverInit( UartInstance_t *pxUartInstance )
 
 void vUartDriverProcessPacket( UartInstance_t *pxUartInstance )
 {
-	UartDriverEvent_t pxUartDriverEvent;
+	/* se declara una varibale para construir el evento a enviar al AO */
+	UartDriverEvent_t xUartDriverEvent;
 
 	/* se recibe el puntero de la estructura del paquete proveniente de la capa anterior */
-	xQueueReceive( pxUartInstance->xQueue.xRx, &pxUartDriverEvent.xPacket, portMAX_DELAY );
+	xQueueReceive( pxUartInstance->xQueue.xRx, &xUartDriverEvent.xPacket, portMAX_DELAY );
 	/* se verifica que el puntero no sea nulo */
-	if( &pxUartDriverEvent.xPacket != NULL )
+	if( &xUartDriverEvent.xPacket != NULL )
 	{
 		/* se verifica que el paquete solo contenga caracteres alfabeticos */
-		if( bCheckCharacters( &pxUartDriverEvent.xPacket ) )
+		if( bCheckCharacters( &xUartDriverEvent.xPacket ) )
 		{
 			/* se contruye el evento (cola de recepción de respuesta del AO, tipo de evento y paquete a procesar */
-			vEventBuild( &pxUartDriverEvent );
+			if ( bEventBuild( &xUartDriverEvent ) )
+			{
+				/* se envia el evento al despachador de eventos y este creará el AO correspondiente */
+				vEventDispatcher( &xUartDriverEvent );
 
-			/* se envia el evento al despachador de eventos y este creará el AO correspondiente */
-			vEventDispatcher( &pxUartDriverEvent );
-
-			/* se recibe la respuesta del objeto activo */
-			xQueueReceive( xAppQueue, &pxUartDriverEvent.xPacket, portMAX_DELAY );
+				/* se recibe la respuesta del objeto activo */
+				xQueueReceive( xAppQueue, &xUartDriverEvent.xPacket, portMAX_DELAY );
+			}
+			else
+				/* se escribe un mensaje de error si no se pudo construir el evento */
+				vOperationError( &xUartDriverEvent.xPacket );
 		}
 
 		else
 			/* se escribe un mensaje de error si el paquete no es correcto */
-			vOperationError( &pxUartDriverEvent.xPacket );
+			vOperationError( &xUartDriverEvent.xPacket );
 
 		/* se envia el paquete hacia la capa 2 */
-		vPacketTx( pxUartInstance, &pxUartDriverEvent.xPacket );
+		vPacketTx( pxUartInstance, &xUartDriverEvent.xPacket );
 	}
 }
 
@@ -112,7 +117,8 @@ void vUartDriverProcessPacket( UartInstance_t *pxUartInstance )
 static void vPacketTx( UartInstance_t *pxUartInstance, UartPacket_t *pxPacket )
 {
 	/* se envia el puntero al mensaje a la capa de separación de frames */
-	xQueueSend( pxUartInstance->xQueue.xTx, ( void * )pxPacket, portMAX_DELAY );
+	xQueueSend( pxUartInstance->xQueue.xTx, ( void * )pxPacket, 0 );
+
 	/* se abre sección crítica */
 	taskENTER_CRITICAL();
 
@@ -124,7 +130,7 @@ static void vPacketTx( UartInstance_t *pxUartInstance, UartPacket_t *pxPacket )
 	taskEXIT_CRITICAL();
 }
 
-static void vEventBuild( UartDriverEvent_t *pxUartDriverEvent )
+static bool_t bEventBuild( UartDriverEvent_t *pxUartDriverEvent )
 {
 	/* se construye el evento con la cola de recpción de resultados, bloque de memoria del paque y la longitud del mismo */
 	pxUartDriverEvent->xReceptionQueue = xAppQueue;
@@ -141,9 +147,10 @@ static void vEventBuild( UartDriverEvent_t *pxUartDriverEvent )
 			pxUartDriverEvent->EventType = UART_PACKET_UPPERLOWERCASE;
 			break;*/
 		default:
-			pxUartDriverEvent->EventType = UART_PACKET_ERROR;
-			break;
+			return FALSE;
 	}
+
+	return TRUE;
 }
 
 static void vEventDispatcher( UartDriverEvent_t *pxUartDriverEvent )

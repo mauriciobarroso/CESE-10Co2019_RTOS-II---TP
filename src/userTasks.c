@@ -45,10 +45,14 @@
 
 void vTickTask( void* pvParameters )
 {
+	TickType_t xLastWakeTime;
+
+	xLastWakeTime = xTaskGetTickCount();
+
 	for( ;; ) {
 		gpioToggle( LED3 );
 
-		vTaskDelay( pdMS_TO_TICKS( 250 ) );
+		vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 250 ) );
 	}
 }
 
@@ -60,7 +64,7 @@ void vDriverTask( void *pvParameters )
 
 	for( ;; )
 	{
-		gpioToggle( LED3 );
+		gpioToggle( LED1 );
 
 		vUartDriverProcessPacket( pxUartInstance );
 

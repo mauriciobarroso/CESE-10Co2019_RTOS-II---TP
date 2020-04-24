@@ -30,24 +30,24 @@ extern "C" {
 
 /*==================[macros]=================================================*/
 
-#define MAX_ACTIVE_OBJECTS_NUMBER	5
-#define LENGTH_QUEUE_AO				10
+#define MAX_ACTIVE_OBJECTS_NUMBER	5	// cantidad máxima de AOs
+#define LENGTH_QUEUE_AO				10	// longitud de la cola del AO
 
 /*==================[typedef]================================================*/
 
 typedef struct
 {
-	bool_t bAlive;
-	QueueHandle_t xQueue;
-	TaskFunction_t xCallback;
-	UBaseType_t uxPriority;
-	TaskHandle_t xTask;
+	bool_t bAlive;				// indicador de existencia del AO
+	QueueHandle_t xQueue;		// cola de recepción del AO
+	TaskFunction_t xCallback;	// función de callback del AO
+	UBaseType_t uxPriority;		// prioridad del thread del AO
+	TaskHandle_t xTask;			// handle del thread del AO
 } ActiveObjectConf_t;
 
 typedef struct
 {
-	eEventType_t eEventType;
-	ActiveObjectConf_t xActiveObjectConf;
+	eEventType_t eEventType;				// tipo de evento
+	ActiveObjectConf_t xActiveObjectConf;	// configuración del AO
 } ActiveObject_t;
 
 /*==================[external data declaration]==============================*/

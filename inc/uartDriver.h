@@ -90,7 +90,28 @@ typedef struct
 
 /*==================[external functions declaration]=========================*/
 
-bool_t bUartDriverInit( UartInstance_t *xUartInstance );
+/**
+ * @brief Function to register AOs in a AOs buffer
+ *
+ * @param pxActiveObjectConf[in] pointer to AO configuration
+ * @param EventType[in] Event type of AO
+ *
+ * @return
+ * 		- TRUE Successful
+ * 		- FALSE Number of created AOs out of range
+ */
+bool_t bUartDriverInit( UartInstance_t *pxUartInstance );
+
+/**
+ * @brief Function to register AOs in a AOs buffer
+ *
+ * @param pxActiveObjectConf[in] pointer to AO configuration
+ * @param EventType[in] Event type of AO
+ *
+ * @return
+ * 		- TRUE Successful
+ * 		- FALSE Number of created AOs out of range
+ */
 void vUartDriverProcessPacket( UartInstance_t *pxUartInstance );
 
 /*==================[cplusplus]==============================================*/
