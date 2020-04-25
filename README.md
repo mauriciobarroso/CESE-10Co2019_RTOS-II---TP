@@ -68,23 +68,19 @@ Opcionales:
 
 # FUNCIONAMIENTO
 
-![3](https://lh3.googleusercontent.com/SMNEJiUgooyBdZ9ayLZl48LWpvCFw0M3HAfhTAlNZ_5PEhT2vLnr0o5z3_hD3jTzWLb4fOOIyUA4oyyZRUGedw_3TI1cm80GELXqfU7VuUTDetQt3bJz6oygxZNp14e-XiCtdPqG0xftQtBy-vL2zTCEau9rTcb5-hD9aojc1cgzbDQrqEHdA6b_y1aVK49CIK_GLB30Ki2AmSz7QTMZ528ScETWmh9VPIfRckRJcAdRAQxvWqscJGK5_9Gcve-QQdukrHyooLU9l_7P0TNOajQcD6NrWuoOJkian8vSBuGlXG_RTAH5YVzW2wrBMA33F3o4pRHDdvyuMprLDBI3d0G6rsEaeuSKMI_Qkjp9FV5sS6K6aF-Ejx9WoSh5448viMhnhnldu0BXlbbpIV7d8GDrWnqyiNS1ZjAlfcKqrAg9tni4ojs2EnPwdSXaBU1R9Hp_M_fqfzO5sUXcCc36axB5dKOAeCmXy2JzBrI1PQVKvTUNp21OgRKc1yOCAL1cLsrQoHSKz7Y4hbTEyFLXgeK7Tq6_tK2bwKiyrzzli_SoeKSX4vMVTnsPYzOv7ruYbQyAIBRzkxv1nNNlUSe503l1D3uJi7XyLuEtDOO02KZb44vgn3W3D1zrq_PJsxe8UtGmomtlv0VA-r0HOg2sn7GfFu0Y9IfAQOSn-_2nHZ6E1d2svXvZqDSUmiM=w889-h333-no)
+![3](https://lh3.googleusercontent.com/AMMuTsMMIekrTQn5ebkO1a1HRolyJiCQBNM7Kwsfb_LyWcIMrwiqPaPnqjJRGqv3wx4uEm6uGZO8wuJzZkIy201NWyf8udakCulDZTycCGutncX4bhk42UhYd9o_n4VY56wTvACCYBCeHIim0qtA93ha4sVVks6pFqnFtCDO-VSrky_qOlzWVzTHjuVCA6ZV8G7KZwtNxKGMGDspwQSjYuvBb5KI64EBw-zhgWUpI0g0DaATUPyY6rO7juij2KFTYLRkVTVxciKyj3Oy5XznotSPE_M7vu--VH6g9SgaD0v7b2JC1iDkIYSZHZR3r0m6IdR_GhCZM2nMiDH-4HSwcdOvPDEhfcE2uFQPm9XPA6-d3SR0upJOu3TItbsa6aFUNurzGcmOitt1DltyM-XTAmF18xf43qNpeBA0Y-E93vq6fuN5QOH-fDEZx1MLK_Pk2Vwadn1O2FAVMCOE8oRGJ-QwCRNFjO6vpH8jFURMANV4LafGOjkRRo9MfxwYmVtsrgUTsD-YVDxBKWR7BkgQj-0pG9W1J0qA8rnmqeAz1IANLrYaQjJCy5RFQsxJo5LxuaY1cuWAmuRuaFOkYykroAuY810kzhMWLul2XXEXKSD-rDjTD1xvsZM8bHQeuOeZmNH2B-voVB7m8AXhjrC3fQjKU49Ow4JjIvyyjZmLfmyr7uRQ6O7LIFxG5gY=w1293-h483-no)
 
-1. C1 recibe mediante interrupción los caracteres provenientes de la UART seleccionada y los almacena en un bloque de memoria dinámica, para comunicar a la siguiente capa de la existencia de un paquete se utiliza un timer que envía en los parámetros de la función de callback la dirección del bloque de memoria y el tamaño del paquete.
+1. C1 recibe mediante interrupción los caracteres provenientes de la UART seleccionada y los almacena en un bloque de memoria dinámica que es verificado para comprobar que posee los caracteres de inicio y fin correspondientes, ademas verifica el CRC y lo envia a la cola de recepción de C3. Además, se ejecuta un timer de 50 ms para detectar paquetes inconclusos o corruptos y descartarlos.
 
-2. C2 ejecuta la función de callback del timer y obtiene el paquete proveniente de C1, entonces verifica que este contiene los caracteres de inicio y fin, despues verifica que el CRC es correcto. Una vez concluidas las verificaciones, el paquete se reduce al mensaje y su operación, inmediatamente es enviado a la cola de recepción de C3.
-
-3. C3 recibe por la cola de recepción el paquete verificado y descompuesto por C2, entonces realiza una última verificación para detectar caracteres que no sean alfabéticos. Ejecutadas todas las verificaciones se construye el evento que debe ser enviado al Objeto Activo, que es el encargado de ejecutar la operación sobre el paquete.
+2. C3 recibe por la cola de recepción el paquete verificado y descompuesto por C2, entonces realiza una última verificación para detectar caracteres que no sean alfabéticos. Ejecutadas todas las verificaciones se construye el evento que debe ser enviado al Objeto Activo, que es el encargado de ejecutar la operación sobre el paquete.
 
 4. El Objeto Activo es creado en función del evento que detectado y de todos los Objetos Activos registrados, si alguno de los Objetos Activos registrados contiene como evento el evento construído anteriormente entonces, se crea el thread y la cola de recepción de este.
 
 5. Una vez que el Objeto Activo finaliza la operación para la cual existe, envía el paquete a la cola de recepción de respuesta del Objeto Activo de C3, luego se destruye eliminando su cola y su thread.
 
-6. C3 recibe por la cola de recepción de respuesta del Objeto Activo el paquete procesado y los envía a su cola de transmisión para que este pueda ser enviado por la UART.
+6. C3 recibe por la cola de recepción de respuesta del Objeto Activo el paquete procesado y los envía a su cola de transmisión para que este pueda ser enviado por la UART. También, habilita la interrupción por transmisor libre de la UART.
 
-7. C2 recibe por la cola de transmisión de C3 el paquete que debe ser enviado, calcula el CRC del paquete y lo añade junto con los caracteres de inicio y fin correspondientes. Después habilita la interrupción por transmisor libre de la UART y envía todo el contenido del paquete.
-
-8. C2 también ejecuta un timer cuya función de callback envías los caracteres de retorno de carro y fin de línea, además finaliza liberando el bloque de memoria utilizado para alojar el paquete que fue transmitido.   
+7. C2 recibe por la cola de transmisión de C3 el paquete que debe ser enviado, calcula el CRC del paquete y lo añade junto con los caracteres de inicio y fin correspondientes, cuando termina el envío del bloque desactiva la interrupción por transmisor libre de la UART y libera el bloque de memoria utilzado. Además, ejecuta un timer cuya función de callback envía los caracteres de retorno de carro y fin de línea y habilita nuevamente la interrupción por transmisor libre de la UART.   
 
 # NOTAS
 1. ~~La función `uartCallbackSet()` de la SAPI no funciona correctamente y no envía los parámetros de callback a la función de callback. Para probar que el sistema funcione correctamente los parámetros de la estructura `UartInstance_t`son declarados como globales en uartDriver.h y utilizados en las demás librerías con el prefijo `extern`.~~ Problema corregido
