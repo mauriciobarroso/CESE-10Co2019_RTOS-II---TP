@@ -63,13 +63,7 @@ void vDriverTask( void *pvParameters )
 	pxUartInstance = ( UartInstance_t * )pvParameters;
 
 	for( ;; )
-	{
-		gpioToggle( LED1 );
-
 		vUartDriverProcessPacket( pxUartInstance );
-
-		vTaskDelay( pdMS_TO_TICKS( 100 ) );
-	}
 }
 
 /*==================[internal functions declaration]=========================*/
