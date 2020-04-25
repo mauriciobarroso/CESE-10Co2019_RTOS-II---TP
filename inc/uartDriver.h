@@ -31,9 +31,9 @@ extern "C" {
 /*==================[macros]=================================================*/
 
 #define PROTOCOL_TIMEOUT	pdMS_TO_TICKS( 50 )				// timeout para transmisión y recepción
-#define PACKET_SIZE			127 							// tamaño máximo de los paquetes
-#define BLOCK_SIZE			( PACKET_SIZE + 1 )				// tamaño de los bloques reservados
-#define POOL_TOTAL_BLOCKS	4								// catidad de bloques en el pool de memoria
+#define PACKET_SIZE			64	 							// tamaño máximo de los paquetes
+#define BLOCK_SIZE			PACKET_SIZE						// tamaño de los bloques reservados
+#define POOL_TOTAL_BLOCKS	20								// cantidad de bloques en el pool de memoria
 #define POOL_SIZE			POOL_TOTAL_BLOCKS * BLOCK_SIZE	// tamaño total del pool
 
 /*==================[typedef]================================================*/
@@ -76,7 +76,7 @@ typedef struct
 	TimerTimeout_t xTimerTimeout;	// manejador de los timers
 	Queue_t xQueue;					// manejador de las colas
 	uint8_t ucTxCounter;			// contador de los datos a transmitir
-	MemoryPool_t xMemoryPool;		// datos de la libreriá QMpool
+	MemoryPool_t xMemoryPool;		// datos de la libreria QMpool
 } UartInstance_t;
 
 typedef struct

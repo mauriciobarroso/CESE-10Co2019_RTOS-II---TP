@@ -23,38 +23,14 @@ static void vTxIsrHandler( void *pvParameters );
 
 void vRxTimeOutHandler( TimerHandle_t xTimer )
 {
-	UartInstance_t *pxUartInstance;
 
-	pxUartInstance = ( UartInstance_t * )pvTimerGetTimerID( xTimer );
+	/* se capturan los datos de los parametros del callback */	UartInstance_t *pxUartInstance = ( UartInstance_t * )pvTimerGetTimerID( xTimer );
 
 	/* se abre sección crítica */
 	taskENTER_CRITICAL();
 
-	/* se verifica que el paquete no supere el tamaño máximo de paquetes */
-	if( pxUartInstance->xRxPacket.ucLength <= PACKET_SIZE )
-	{
-		/* se verifica que el paquete sea correcto (caracteres de inicion y fin) */
-		if( bCheckPacket( &pxUartInstance->xRxPacket ) )
-		{
-			/* se extrae el mensaje del paquete y se manda por la cola de recepcion */
-			vExtractMessage( &pxUartInstance->xRxPacket );
-
-			/* se verifica CRC */
-			if( bCheckCrc( &pxUartInstance->xRxPacket ) )
-			{
-				/* se manda por la cola de recepción el paquete separado de los caracteres de inicio, fin y crc */
-				xQueueSend( pxUartInstance->xQueue.xRx, ( void * )&pxUartInstance->xRxPacket, portMAX_DELAY );
-
-				/* se pide otro bloque de memoria para el proximo mensaje a recibir */
-				pxUartInstance->xRxPacket.pucBlock = ( char * )QMPool_get( &pxUartInstance->xMemoryPool.xTxPool, 0 );
-
-				/* se verifica si se obtuvo un bloque de memoria válido */
-				if( pxUartInstance->xRxPacket.pucBlock == NULL )
-					uartCallbackClr( pxUartInstance->xUartConfig.xName, UART_RECEIVE );
-			}
-		}
-	}
-
+	//gpioToggle( LED2 );
+	gpioToggle( LED2 );
 	pxUartInstance->xRxPacket.ucLength = 0;
 
 	/* se cierra sección crítica */
@@ -64,6 +40,8 @@ void vRxTimeOutHandler( TimerHandle_t xTimer )
 void vTxTimeOutHandler( TimerHandle_t xTimer )
 {
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+	/* se capturan los datos de los parametros del callback */
 	UartInstance_t *pxUartInstance = ( UartInstance_t * )pvTimerGetTimerID( xTimer );
 
 	/* se abre sección crítica */
@@ -73,11 +51,10 @@ void vTxTimeOutHandler( TimerHandle_t xTimer )
 	uartTxWrite( pxUartInstance->xUartConfig.xName, '\r' );
 	uartTxWrite( pxUartInstance->xUartConfig.xName, '\n' );
 
-	/* se libera la memoria dinámica utilizada para el paquete */
-	QMPool_put( &pxUartInstance->xMemoryPool.xTxPool, ( void * )pxUartInstance->xTxPacket.pucBlock ); // verificar parametros
-
 	/* se pone el 0 el contador de bytes transmitidos */
 	pxUartInstance->ucTxCounter = 0;
+
+	gpioWrite( LED1, OFF );
 
 	/* se cierra sección crítica */
 	taskEXIT_CRITICAL();
@@ -136,6 +113,8 @@ static void vRxIsrHandler( void *pvParameters )
 {
 	UBaseType_t uxSavedInterruptStatus = pdFALSE;
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+	/* se capturan los datos de los parametros del callback */
 	UartInstance_t *pxUartInstance = ( UartInstance_t * )pvParameters;
 
 	/* se abre sección crítica */
@@ -143,13 +122,49 @@ static void vRxIsrHandler( void *pvParameters )
 
 	/* se agrega el caracter recibido en el array de memoria dinámica */
 	if( pxUartInstance->xRxPacket.ucLength < PACKET_SIZE )
+	{
 		pxUartInstance->xRxPacket.pucBlock[ pxUartInstance->xRxPacket.ucLength ] = uartRxRead( pxUartInstance->xUartConfig.xName );
+
+		/* se inicia el timer */
+		xTimerStartFromISR( pxUartInstance->xTimerTimeout.xRx, &xHigherPriorityTaskWoken );
+
+		/* se sube en 1 el tamaño del paquete recibido */
+		pxUartInstance->xRxPacket.ucLength++;
+	}
 	else
-		pxUartInstance->xRxPacket.ucLength = PACKET_SIZE + 1;
-	/* se sube en 1 el tamaño del paquete recibido */
-	pxUartInstance->xRxPacket.ucLength++;
-	/* se inicia el timer */
-	xTimerStartFromISR( pxUartInstance->xTimerTimeout.xRx, &xHigherPriorityTaskWoken );
+		/* si el tamaño del paquete es superior al tamaño máximo entonces se descarta el paquete */
+		pxUartInstance->xRxPacket.ucLength = 0;
+
+	/* se verifica que el primer byte es '(' o se descarta el paquete */
+	if( pxUartInstance->xRxPacket.pucBlock[ 0 ] != '(' )
+		pxUartInstance->xRxPacket.ucLength = 0;
+
+	/* se verifica cuando el paquete contiene ')' y se procesa */
+	if( pxUartInstance->xRxPacket.pucBlock[ pxUartInstance->xRxPacket.ucLength - 1 ] == ')' )
+	{
+		/* se para el timer cuando se recibe un paquete con los caracteres de inicio y fin correctos*/
+		xTimerStopFromISR( pxUartInstance->xTimerTimeout.xRx, &xHigherPriorityTaskWoken );
+
+		/* se extrae el memsaje (se elimanan '(' y ')') */
+		vExtractMessage( &pxUartInstance->xRxPacket );
+
+		/* se verifica y se elimina el CRC */
+		if( bCheckCrc( &pxUartInstance->xRxPacket ) )
+		{
+			/* se manda por la cola de recepción el paquete separado de los caracteres de inicio, fin y crc */
+			if( xQueueSendFromISR( pxUartInstance->xQueue.xRx, ( void * )&pxUartInstance->xRxPacket, &xHigherPriorityTaskWoken ) == pdTRUE )
+			{
+				/* se pide otro bloque de memoria para el proximo mensaje a recibir */
+				pxUartInstance->xRxPacket.pucBlock = ( char * )QMPool_get( &pxUartInstance->xMemoryPool.xTxPool, 0 );
+
+				/* se verifica si se obtuvo un bloque de memoria válido */
+				if( pxUartInstance->xRxPacket.pucBlock == NULL )
+					uartCallbackClr( pxUartInstance->xUartConfig.xName, UART_RECEIVE );
+			}
+		}
+		/* se descarta el paquete si ya fue enviado o si la verificaciónde CRC falló */
+		pxUartInstance->xRxPacket.ucLength = 0;
+	}
 
 	/* se cierra sección crítica */
 	taskEXIT_CRITICAL_FROM_ISR( uxSavedInterruptStatus );
@@ -162,6 +177,8 @@ static void vTxIsrHandler( void *pvParameters )
 {
 	UBaseType_t uxSavedInterruptStatus = pdFALSE;
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+	/* se capturan los datos de los parametros del callback */
 	UartInstance_t *pxUartInstance = ( UartInstance_t * )pvParameters;
 
 	/* se abre sección crítica */
@@ -180,8 +197,9 @@ static void vTxIsrHandler( void *pvParameters )
 			vAddStartAndEndCharacters( &pxUartInstance->xTxPacket );
 		}
 
-		pxUartInstance->xTxPacket.ucLength += 1;
+		pxUartInstance->xTxPacket.ucLength++;
 	}
+
 	/* se transmiten todos los bytes del bloque de transmisión */
 	if( pxUartInstance->ucTxCounter < pxUartInstance->xTxPacket.ucLength - 1 )
 	{
@@ -191,8 +209,16 @@ static void vTxIsrHandler( void *pvParameters )
 
 	if( pxUartInstance->ucTxCounter == pxUartInstance->xTxPacket.ucLength - 1 )
 	{
+		/* se libera la memoria dinámica utilizada para el paquete */
+		QMPool_put( &pxUartInstance->xMemoryPool.xTxPool, ( void * )pxUartInstance->xTxPacket.pucBlock ); // verificar parametros
+
+		/* se elimina el callback de transmisión de la UART */
 		uartCallbackClr( pxUartInstance->xUartConfig.xName, UART_TRANSMITER_FREE );
+
+		/* se inicia el timer de transmisión */
 		xTimerStartFromISR( pxUartInstance->xTimerTimeout.xTx, &xHigherPriorityTaskWoken );
+
+		gpioWrite( LED1, ON );
 	}
 
 	/* se cierra sección crítica */
