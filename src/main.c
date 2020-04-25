@@ -26,8 +26,10 @@
 
 /*==================[external data declaration]==============================*/
 
+/* instancia de la UART a usar */
 UartInstance_t xUartInstance;
 
+/* objetos activos a registrar */
 ActiveObject_t xActiveObjectLowercase;
 ActiveObject_t xActiveObjectUppercase;
 ActiveObject_t xActiveObjectUpperLowercase;
@@ -75,7 +77,7 @@ int main( void )
    /* se inicializa uartDriver */
    if( !bUartDriverInit( &xUartInstance ) )
    {
-	   /* mantiene encendido el led rojo para indicar error */
+	   /* se mantiene encendido el led RGB en rojo para indicar error */
 	   gpioWrite( LEDR, ON );
 
 	   for( ;; )
@@ -83,7 +85,7 @@ int main( void )
    }
    else
    {
-	   /* mantiene encendido el led verde para indicar exito */
+	   /* se mantiene encendido el led RGB en color celeste para indicar éxito */
 	   gpioWrite( LEDG, ON );
    	   gpioWrite( LEDB, ON );
 
