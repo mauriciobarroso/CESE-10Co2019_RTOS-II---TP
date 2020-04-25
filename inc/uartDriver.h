@@ -31,9 +31,9 @@ extern "C" {
 /*==================[macros]=================================================*/
 
 #define PROTOCOL_TIMEOUT	pdMS_TO_TICKS( 50 )				// timeout para transmisión y recepción
-#define PACKET_SIZE			64	 							// tamaño máximo de los paquetes
+#define PACKET_SIZE			128	 							// tamaño máximo de los paquetes
 #define BLOCK_SIZE			PACKET_SIZE						// tamaño de los bloques reservados
-#define POOL_TOTAL_BLOCKS	20								// cantidad de bloques en el pool de memoria
+#define POOL_TOTAL_BLOCKS	30								// cantidad de bloques en el pool de memoria
 #define POOL_SIZE			POOL_TOTAL_BLOCKS * BLOCK_SIZE	// tamaño total del pool
 
 /*==================[typedef]================================================*/
