@@ -37,9 +37,6 @@ static void vEventDispatcher( UartDriverEvent_t *pxUartDriverEvent );
 
 bool_t bUartDriverInit( UartInstance_t *pxUartInstance )
 {
-	/* se crea la cola de recepción de respuesta de los AOs */
-	xAppQueue = xQueueCreate( 4, sizeof( UartPacket_t ) );
-
 	/* se inicializan variables */
 	pxUartInstance->ucTxCounter = 0;
 	pxUartInstance->xRxPacket.ucLength = 0;
@@ -73,6 +70,11 @@ bool_t bUartDriverInit( UartInstance_t *pxUartInstance )
 		return FALSE;
 	QMPool_init( &pxUartInstance->xMemoryPool.xTxPool, ( void * )pxUartInstance->xMemoryPool.pucPoolStorage, POOL_SIZE * sizeof( char ), BLOCK_SIZE );
 	pxUartInstance->xRxPacket.pucBlock = ( char * )QMPool_get( &pxUartInstance->xMemoryPool.xTxPool, 0 );
+
+	/* se crea la cola de recepción de respuesta de los AOs */
+	xAppQueue = xQueueCreate( 10, sizeof( UartPacket_t ) );
+	if( xAppQueue == NULL)
+		return FALSE;
 
 	/* se retorna TRUE si todas las operaciones anteriores fueron exitosas */
 	return TRUE;
